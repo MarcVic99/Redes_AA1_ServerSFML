@@ -1,0 +1,5 @@
+enum tipoPaquete 
+{ 
+	HANDSHAKE, 
+	LOGIN 
+};

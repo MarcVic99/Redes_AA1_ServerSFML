@@ -1,4 +1,5 @@
 #include "network/Server.h"
+#include "network/PacketTypes.h"
 #include <iostream>
 #include <string>
 
@@ -76,7 +77,18 @@ void Server::handleClientMessages()
 
             if (status == sf::Socket::Status::Done)
             {
-                
+                tipoPaquete tipo;
+                packet >> tipo;
+
+                switch (tipo)
+                {
+                    case tipoPaquete::HANDSHAKE:
+                        handleHandshake(*clients[i], packet);
+                        break;
+
+                    default:
+                        break;
+                }
             }
             else if (status == sf::Socket::Status::Disconnected)
             {
@@ -88,11 +100,25 @@ void Server::handleClientMessages()
     }
 }
 
-void Server::handleHandshake(sf::TcpSocket* client, sf::Packet& packet)
+void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
 {
     std::string message;
     packet >> message;
-    std::cout << "Mensaje: " << message << std::endl;
+    std::cout << "Handshake recibido: " << message << std::endl;
+
+    sf::Packet response;
+    if (message == "HELLO_SERVER")
+    {
+        response << tipoPaquete::HANDSHAKE_OK << std::string("HELLO_CLIENT");
+    }
+    else {
+        response << tipoPaquete::HANDSHAKE_ERROR << std::string("HELLO_ERROR");
+    }
+    
+    if (client.send(response) != sf::Socket::Status::Done)
+    {
+        std::cout << "Error al enviar mensaje en Handshake" << std::endl;
+    }
 }
 
 void Server::removeClient(std::size_t index)

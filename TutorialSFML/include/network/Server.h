@@ -21,7 +21,7 @@ private:
 	bool initializeListener();
 	void handleNewConnection();
 	void handleClientMessages();
-	void handleHandshake(sf::TcpSocket* client, sf::Packet& packet);
+	void handleHandshake(sf::TcpSocket& client, sf::Packet& packet);
 	void removeClient(std::size_t index);
 	
 	void shutdown();

@@ -2,7 +2,7 @@
 
 #include <SFML/Network.hpp>
 #include <vector>
-#include "../core/Constants.h"
+#include "core/Constants.h"
 #include <iostream>
 
 class Server

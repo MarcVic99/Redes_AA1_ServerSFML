@@ -1,31 +1,34 @@
-#include "../../include/network/Server.h"
+#include "network/Server.h"
+#include <iostream>
+#include <string>
 
 int Server::run()
 {
     bool serverClosed = false;
-
-    if (!initializeListener())
-    {
-        return -1;
-    }
     
-    while (!serverClosed)
-    {
-        if (selector.wait())
+        if (!initializeListener())
         {
-            if (selector.isReady(listener))
+            return -1;
+        }
+        
+        while (!serverClosed)
+        {
+            if (selector.wait())
             {
-                handleNewConnection();
-            }
-            else
-            {
-                handleClientMessages();
+                if (selector.isReady(listener))
+                {
+                    handleNewConnection();
+                }
+                else
+                {
+                    handleClientMessages();
+                }
             }
         }
-    }
-    shutdown();
-    return 0;
+        shutdown();
+        return 0;
 }
+
 
 bool Server::initializeListener()
 {

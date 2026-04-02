@@ -27,10 +27,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="TutorialSFML.cpp">
+    <ClCompile Include="include\core\Constants.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\network\Server.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\network\PacketTypes.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source.cpp">
+    <ClCompile Include="src\network\Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

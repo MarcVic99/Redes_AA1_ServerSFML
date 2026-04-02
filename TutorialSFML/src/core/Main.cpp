@@ -1,6 +1,4 @@
-
-#include "../../include/network/Server.h"
-#include "../../include/core/Constants.h"
+#include "network/Server.h"
 
 int main()
 {

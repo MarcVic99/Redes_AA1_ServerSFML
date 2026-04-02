@@ -32,6 +32,7 @@ int Server::run()
 
 bool Server::initializeListener()
 {
+    //El server empieza a escuchar 
     if (listener.listen(LISTENER_PORT) != sf::Socket::Status::Done)
     {
         std::cout << "Error al intentar escuchar en el puerto " << LISTENER_PORT << std::endl;
@@ -43,8 +44,11 @@ bool Server::initializeListener()
     return true;
 }
 
-void Server::handleNewConnection()
+void Server::handleNewConnection() 
 {
+    //Crea un nuevo cliente 
+    // y si es aceptado se añade al vector y al selector. 
+    // Sino, se borra
     sf::TcpSocket* newClient = new sf::TcpSocket();
 
     if (listener.accept(*newClient) == sf::Socket::Status::Done)
@@ -62,6 +66,7 @@ void Server::handleNewConnection()
 
 void Server::handleClientMessages()
 {
+    //Por cada cliente se mira si se recibe un paquete
     for (int i = 0; i < static_cast<int>(clients.size()); i++)
     {
         if (selector.isReady(*clients[i]))
@@ -71,9 +76,7 @@ void Server::handleClientMessages()
 
             if (status == sf::Socket::Status::Done)
             {
-                std::string message;
-                packet >> message;
-                std::cout << "Mensaje: " << message << std::endl;
+                
             }
             else if (status == sf::Socket::Status::Disconnected)
             {
@@ -85,8 +88,16 @@ void Server::handleClientMessages()
     }
 }
 
+void Server::handleHandshake(sf::TcpSocket* client, sf::Packet& packet)
+{
+    std::string message;
+    packet >> message;
+    std::cout << "Mensaje: " << message << std::endl;
+}
+
 void Server::removeClient(std::size_t index)
 {
+    //Se elimina el cliente del selector y del vector cuando se desconecta
     selector.remove(*clients[index]);
     delete clients[index];
     clients.erase(clients.begin() + index);
@@ -94,6 +105,7 @@ void Server::removeClient(std::size_t index)
 
 void Server::shutdown()
 {
+    //Server cerrado
     for (sf::TcpSocket* client : clients)
     {
         delete client;

@@ -18,11 +18,10 @@ private:
 
 	std::vector<sf::TcpSocket*> clients;
 
-
-
 	bool initializeListener();
 	void handleNewConnection();
 	void handleClientMessages();
+	void handleHandshake(sf::TcpSocket* client, sf::Packet& packet);
 	void removeClient(std::size_t index);
 	
 	void shutdown();

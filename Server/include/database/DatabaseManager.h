@@ -1,8 +1,15 @@
 #pragma once
 
+#include "DatabaseConfig.h"
+
 #include <iostream>
+
 #include "mysql_connection.h"
-#include "cppconn/driver.h"
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/resultset.h>
+
 
 class DatabaseManager
 {
@@ -10,8 +17,8 @@ public:
 
 	DatabaseManager() {};
 
-	bool connect();
-	void disconnect();
+	bool connectDB(sql::Driver*& driver, sql::Connection*& con);
+	void disconnectDB(sql::Connection* con);
 
 	bool registerUserDB(const std::string& name, const std::string& password);
 

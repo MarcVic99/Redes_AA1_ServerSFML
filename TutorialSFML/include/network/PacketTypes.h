@@ -7,6 +7,8 @@ enum class tipoPaquete {
     HANDSHAKE_OK,
     HANDSHAKE_ERROR,
     LOGIN,
+    LOGIN_OK,
+    LOGIN_ERROR
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

@@ -4,6 +4,7 @@
 #include <vector>
 #include "core/Constants.h"
 #include <iostream>
+#include "PacketTypes.h"
 
 class Server
 {
@@ -20,8 +21,13 @@ private:
 
 	bool initializeListener();
 	void handleNewConnection();
+
 	void handleClientMessages();
 	void handleHandshake(sf::TcpSocket& client, sf::Packet& packet);
+	void handleLogin(sf::TcpSocket& client, sf::Packet packet);
+
+
+
 	void removeClient(std::size_t index);
 	
 	void shutdown();

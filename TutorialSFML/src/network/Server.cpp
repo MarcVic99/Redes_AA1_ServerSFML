@@ -1,5 +1,5 @@
 #include "network/Server.h"
-#include "network/PacketTypes.h"
+//#include "network/PacketTypes.h"
 #include <iostream>
 #include <string>
 
@@ -31,9 +31,10 @@ int Server::run()
 }
 
 
+
+//El server empieza a escuchar 
 bool Server::initializeListener()
 {
-    //El server empieza a escuchar 
     if (listener.listen(LISTENER_PORT) != sf::Socket::Status::Done)
     {
         std::cout << "Error al intentar escuchar en el puerto " << LISTENER_PORT << std::endl;
@@ -45,11 +46,14 @@ bool Server::initializeListener()
     return true;
 }
 
+
+
+//Crea un nuevo cliente 
+  // y si es aceptado se añade al vector y al selector. 
+  // Sino, se borra
 void Server::handleNewConnection() 
 {
-    //Crea un nuevo cliente 
-    // y si es aceptado se añade al vector y al selector. 
-    // Sino, se borra
+  
     sf::TcpSocket* newClient = new sf::TcpSocket();
 
     if (listener.accept(*newClient) == sf::Socket::Status::Done)
@@ -65,9 +69,11 @@ void Server::handleNewConnection()
     }
 }
 
+
+
+//Por cada cliente, se comprueba que tipo de paquete ha llegado y gestiona
 void Server::handleClientMessages()
 {
-    //Por cada cliente se mira si se recibe un paquete
     for (int i = 0; i < static_cast<int>(clients.size()); i++)
     {
         if (selector.isReady(*clients[i]))
@@ -86,6 +92,10 @@ void Server::handleClientMessages()
                         handleHandshake(*clients[i], packet);
                         break;
 
+                    case tipoPaquete::LOGIN:
+                        handleLogin(*clients[i], packet);
+                        break;
+
                     default:
                         break;
                 }
@@ -100,6 +110,9 @@ void Server::handleClientMessages()
     }
 }
 
+
+//El server recibe un mensaje de Handshake y comprueba si el mensaje es el correcto.
+// Si es así, envia mensaje de Hello_Client y si es otro, Hello_Error
 void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
 {
     std::string message;
@@ -114,12 +127,26 @@ void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
     else {
         response << tipoPaquete::HANDSHAKE_ERROR << std::string("HELLO_ERROR");
     }
-    
+
     if (client.send(response) != sf::Socket::Status::Done)
     {
         std::cout << "Error al enviar mensaje en Handshake" << std::endl;
     }
 }
+
+void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
+{
+    std::string user;
+    std::string password;
+
+    packet >> user;
+    packet >> password;
+    std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
+
+    
+}
+
+
 
 void Server::removeClient(std::size_t index)
 {

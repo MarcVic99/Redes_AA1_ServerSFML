@@ -25,7 +25,10 @@ private:
 	void handleClientMessages();
 	void handleHandshake(sf::TcpSocket& client, sf::Packet& packet);
 	void handleLogin(sf::TcpSocket& client, sf::Packet packet);
+	void handleRegister(sf::TcpSocket& client, sf::Packet packet);
 
+
+	bool sendPacket(sf::TcpSocket& socket,sf::Packet& packet, const std::string& context);
 
 
 	void removeClient(std::size_t index);

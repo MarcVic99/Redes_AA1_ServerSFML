@@ -96,6 +96,10 @@ void Server::handleClientMessages()
                         handleLogin(*clients[i], packet);
                         break;
 
+                    case tipoPaquete::REGISTER:
+                        handleRegister(*clients[i], packet);
+                        break;
+
                     default:
                         break;
                 }
@@ -128,9 +132,9 @@ void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
         response << tipoPaquete::HANDSHAKE_ERROR << std::string("HELLO_ERROR");
     }
 
-    if (client.send(response) != sf::Socket::Status::Done)
+    if (!sendPacket(client, response, "handsahake"))
     {
-        std::cout << "Error al enviar mensaje en Handshake" << std::endl;
+        return;
     }
 }
 
@@ -143,9 +147,43 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
 
-    
+    sf::Packet response;
+    response << tipoPaquete::LOGIN_OK << std::string("CLIENT_VERIFIED");
+
+    if (!sendPacket(client, response, "login"))
+    {
+        return;
+    }
 }
 
+void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
+{
+    std::string user;
+    std::string password;
+
+    packet >> user;
+    packet >> password;
+    std::cout << "Registro recibido:" << std::endl << "User: " << user << " Password: " << password;
+
+    sf::Packet response;
+    response << tipoPaquete::REGISTER_OK << std::string("CLIENT_CREATED");
+
+    if (!sendPacket(client, response, "register"))
+    {
+        return;
+    }
+}
+
+
+bool Server::sendPacket(sf::TcpSocket& socket, sf::Packet& packet, const std::string& context)
+{
+    if (socket.send(packet) != sf::Socket::Status::Done)
+    {
+        std::cerr << "Error al enviar " << context << std::endl;
+        return false;
+    }
+    return true;
+}
 
 
 void Server::removeClient(std::size_t index)

@@ -1,9 +1,0 @@
-﻿  Constants.h
-  Server.h
-  PacketTypes.h
-  Main.cpp
-  Server.cpp
-  Generando código...
-x64\Debug\Server.obj : warning LNK4042: objeto especificado más de una vez; omitidos los sobrantes
-Main.obj : error LNK2019: símbolo externo "public: int __cdecl Server::run(void)" (?run@Server@@QEAAHXZ) sin resolver al que se hace referencia en la función main
-C:\Users\Usuario.DESKTOP-RPUT52S\Documents\GitHub\Redes_AA1_ServerSFML\x64\Debug\TutorialSFML.exe : fatal error LNK1120: 1 externos sin resolver

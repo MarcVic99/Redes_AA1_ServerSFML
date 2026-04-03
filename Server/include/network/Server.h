@@ -5,6 +5,7 @@
 #include "core/Constants.h"
 #include <iostream>
 #include "PacketTypes.h"
+#include "database/DatabaseManager.h"
 
 class Server
 {
@@ -18,6 +19,8 @@ private:
 	sf::SocketSelector selector;
 
 	std::vector<sf::TcpSocket*> clients;
+
+	DatabaseManager databaseManager;
 
 	bool initializeListener();
 	void handleNewConnection();

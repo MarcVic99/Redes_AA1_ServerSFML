@@ -4,7 +4,8 @@
 
 int Server::run()
 {
-    bool serverClosed = false;
+#pragma region temporal code
+    /*bool serverClosed = false;
     
         if (!initializeListener())
         {
@@ -25,8 +26,10 @@ int Server::run()
                 }
             }
         }
-        shutdown();
-        return 0;
+        shutdown();*/
+#pragma endregion
+
+    return 0;
 }
 
 

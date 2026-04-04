@@ -15,15 +15,19 @@ class DatabaseManager
 {
 public:
 
-	DatabaseManager() {};
+	DatabaseManager() { driver = nullptr; con = nullptr; };
+	~DatabaseManager() { disconnectDB(con); };
 
 	bool connectDB(sql::Driver*& driver, sql::Connection*& con);
 	void disconnectDB(sql::Connection* con);
 
-	bool registerUserDB(const std::string& name, const std::string& password);
 
+	bool registerUserDB(const std::string& name, const std::string& password);
 	bool validateLogin(const std::string& name, const std::string& password);
 
 private:
+	sql::Driver* driver;
+	sql::Connection* con;
+
 };
 

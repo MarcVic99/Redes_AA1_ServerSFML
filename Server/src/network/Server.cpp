@@ -5,27 +5,27 @@
 int Server::run()
 {
     bool serverClosed = false;
-    
-        if (!initializeListener())
+
+    if (!initializeListener())
+    {
+        return -1;
+    }
+
+    while (!serverClosed)
+    {
+        if (selector.wait())
         {
-            return -1;
-        }
-        
-        while (!serverClosed)
-        {
-            if (selector.wait())
+            if (selector.isReady(listener))
             {
-                if (selector.isReady(listener))
-                {
-                    handleNewConnection();
-                }
-                else
-                {
-                    handleClientMessages();
-                }
+                handleNewConnection();
+            }
+            else
+            {
+                handleClientMessages();
             }
         }
-        shutdown();
+    }
+    shutdown();
         return 0;
 }
 
@@ -98,6 +98,9 @@ void Server::handleClientMessages()
                     case tipoPaquete::REGISTER:
                         handleRegister(*clients[i], packet);
                         break;
+                    case tipoPaquete::GET_RANKING:
+                        handleGetRanking(*clients[i], packet);
+                        break;
 
                     default:
                         break;
@@ -112,6 +115,8 @@ void Server::handleClientMessages()
         }
     }
 }
+
+
 
 
 //El server recibe un mensaje de Handshake y comprueba si el mensaje es el correcto.
@@ -171,6 +176,43 @@ void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
     {
         return;
     }
+}
+
+
+void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
+{
+    //el cliente debería enviar su id para el 11º puesto
+    int userID;
+
+    packet >> userID;
+
+    std::cout << "Cliente pide acceso al Ranking. Cliente ID:" << userID << std::endl;
+
+    //ordenados del 1 al 10
+    std::vector<PlayerData> top10Users = databaseManager.getTop10();
+
+    sf::Packet response;
+    response << tipoPaquete::RECEIVE_RANKING;
+
+    //tamaño del vector
+    response << static_cast<int>(top10Users.size());
+
+    //cada user
+    for (const auto& cliente : top10Users)
+    {
+        response << cliente.user;
+        response << cliente.puntuacion_total;
+    }
+
+    //añadir el ranking del cliente actual
+    int userRank = databaseManager.getPlayerRank(userID);
+    response << userRank;
+
+    if (!sendPacket(client, response, "getRegister"))
+    {
+        return;
+    }
+
 }
 
 

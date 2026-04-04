@@ -11,7 +11,9 @@ enum class tipoPaquete {
     LOGIN_ERROR,
     REGISTER,
     REGISTER_OK,
-    REGISTER_ERROR
+    REGISTER_ERROR,
+    GET_RANKING,
+    RECEIVE_RANKING
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

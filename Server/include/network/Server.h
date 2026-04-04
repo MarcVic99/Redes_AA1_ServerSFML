@@ -29,6 +29,7 @@ private:
 	void handleHandshake(sf::TcpSocket& client, sf::Packet& packet);
 	void handleLogin(sf::TcpSocket& client, sf::Packet packet);
 	void handleRegister(sf::TcpSocket& client, sf::Packet packet);
+	void handleGetRanking(sf::TcpSocket& client, sf::Packet packet);
 
 
 	bool sendPacket(sf::TcpSocket& socket,sf::Packet& packet, const std::string& context);

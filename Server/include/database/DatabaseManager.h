@@ -26,20 +26,21 @@ public:
 	DatabaseManager() { driver = nullptr; con = nullptr; };
 	~DatabaseManager() { disconnectDB(); };
 
-	bool connectDB();
+	bool ConnectDB();
 	void disconnectDB();
 
 
-	bool registerUserDB(const std::string& name, const std::string& password);
-	bool checkUserInDB(const std::string& name, const std::string& password);
-	bool validateLogin(const std::string& name, const std::string& password);
+	bool RegisterUserDB(const std::string& name, const std::string& password);
+	bool CheckUserInDB(const std::string& name, std::vector<std::string>& users);
+	bool ValidateLogin(const std::string& name, const std::string& password);
+	std::vector<std::string> GetAllUsers(sql::Connection* con);
 
 	//función coger top 10
-	std::vector <PlayerData> getTop10();
+	std::vector <PlayerData> GetTop10();
 
 	//Getters
-	PlayerData getPlayerbyID(int id);
-	int getPlayerRank(int id);
+	PlayerData GetPlayerbyID(int id);
+	int GetPlayerRank(int id);
 
 private:
 	sql::Driver* driver;

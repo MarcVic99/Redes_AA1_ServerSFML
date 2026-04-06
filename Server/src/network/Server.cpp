@@ -11,7 +11,7 @@ int Server::run()
         return -1;
     }
 
-    if (!databaseManager.connectDB())
+    if (!databaseManager.ConnectDB())
     {
         return -1;
     }
@@ -157,7 +157,7 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
 
-    databaseManager.validateLogin(user, password);
+    databaseManager.ValidateLogin(user, password);
 
     sf::Packet response;
     response << tipoPaquete::LOGIN_OK << std::string("CLIENT_VERIFIED");
@@ -177,7 +177,7 @@ void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Registro recibido:" << std::endl << "User: " << user << " Password: " << password;
 
-    databaseManager.registerUserDB(user, password);
+    databaseManager.RegisterUserDB(user, password);
 
     sf::Packet response;
     response << tipoPaquete::REGISTER_OK << std::string("CLIENT_CREATED");
@@ -199,7 +199,7 @@ void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
     std::cout << "Cliente pide acceso al Ranking. Cliente ID:" << userID << std::endl;
 
     //ordenados del 1 al 10
-    std::vector<PlayerData> top10Users = databaseManager.getTop10();
+    std::vector<PlayerData> top10Users = databaseManager.GetTop10();
 
     sf::Packet response;
     response << tipoPaquete::RECEIVE_RANKING;
@@ -215,7 +215,7 @@ void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
     }
 
     //añadir el ranking del cliente actual
-    int userRank = databaseManager.getPlayerRank(userID);
+    int userRank = databaseManager.GetPlayerRank(userID);
     response << userRank;
 
     if (!sendPacket(client, response, "getRegister"))

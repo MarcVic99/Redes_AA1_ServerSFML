@@ -31,7 +31,7 @@ public:
 
 
 	bool RegisterUserDB(const std::string& name, const std::string& password);
-	bool CheckUserInDB(const std::string& name, std::vector<std::string>& users);
+	bool CheckUserInDB(const std::string& name,const std::vector<std::string>& users);
 	bool ValidateLogin(const std::string& name, const std::string& password);
 	std::vector<std::string> GetAllUsers(sql::Connection* con);
 

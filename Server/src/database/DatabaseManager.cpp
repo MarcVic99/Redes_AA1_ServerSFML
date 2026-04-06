@@ -43,10 +43,9 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 
 	try
 	{
-		std::vector <std::string> users = GetAllUsers(con);
 		//Select de lo que se ha pasado
-		//Search for existing user
-		if (CheckUserInDB(name, users))
+		//Comprueba si el usuario ya existe en la base de datos
+		if (CheckUserInDB(name, GetAllUsers(con)))
 		{
 			return false;
 		}
@@ -81,7 +80,8 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 }
 
 
-bool DatabaseManager::CheckUserInDB(const std::string& name, std::vector<std::string>& users)
+//Comprueba si el usuario ya existe en la base de datos
+bool DatabaseManager::CheckUserInDB(const std::string& name, const std::vector<std::string>& users)
 {
 	for (const auto& user : users) {
 
@@ -125,6 +125,7 @@ bool DatabaseManager::ValidateLogin(const std::string& name, const std::string& 
 	}
 }
 
+//Devuelve el vector de usuarios que hay en la base de datos
 std::vector<std::string> DatabaseManager::GetAllUsers(sql::Connection* _con)
 {
 	std::vector<std::string> _users;

@@ -5,8 +5,13 @@
 int Server::run()
 {
     bool serverClosed = false;
-
+    
     if (!initializeListener())
+    {
+        return -1;
+    }
+
+    if (!databaseManager.connectDB())
     {
         return -1;
     }
@@ -25,8 +30,9 @@ int Server::run()
             }
         }
     }
+    databaseManager.disconnectDB();
     shutdown();
-        return 0;
+    return 0;
 }
 
 
@@ -151,6 +157,8 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
 
+    databaseManager.validateLogin(user, password);
+
     sf::Packet response;
     response << tipoPaquete::LOGIN_OK << std::string("CLIENT_VERIFIED");
 
@@ -168,6 +176,8 @@ void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
     packet >> user;
     packet >> password;
     std::cout << "Registro recibido:" << std::endl << "User: " << user << " Password: " << password;
+
+    databaseManager.registerUserDB(user, password);
 
     sf::Packet response;
     response << tipoPaquete::REGISTER_OK << std::string("CLIENT_CREATED");

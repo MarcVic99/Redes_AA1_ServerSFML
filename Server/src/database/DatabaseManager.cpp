@@ -1,14 +1,15 @@
 #include "database/DatabaseManager.h"
 
-bool DatabaseManager::connectDB(sql::Driver*& driver, sql::Connection*& con)
+bool DatabaseManager::connectDB()
 {
 	try
 	{
 		driver = get_driver_instance();
 		con = driver->connect(SERVER, USERNAME, PASSWORD);
+		con->setSchema(DATABASE);
+		
 		std::cout << "Connection  done." << std::endl;
-
-
+		return true;
 	}
 	catch (sql::SQLException e)
 	{
@@ -17,21 +18,24 @@ bool DatabaseManager::connectDB(sql::Driver*& driver, sql::Connection*& con)
     return false;
 }
 
-void DatabaseManager::disconnectDB(sql::Connection* con)
+void DatabaseManager::disconnectDB()
 {
-	con->close();
-
-	if (con->isClosed())
+	if (con != nullptr)
 	{
-		std::cout << "Connection Close" << std::endl;
-		delete con;
-		con = nullptr;
+		con->close();
+
+		if (con->isClosed())
+		{
+			std::cout << "Connection Close" << std::endl;
+			delete con;
+			con = nullptr;
+			driver = nullptr;
+		}
 	}
 }
 
 bool DatabaseManager::registerUserDB(const std::string& name, const std::string& password)
 {
-
 	if (con == nullptr)
 	{
 		return false;
@@ -39,23 +43,27 @@ bool DatabaseManager::registerUserDB(const std::string& name, const std::string&
 
 	try
 	{
-
 		//Select de lo que se ha pasado
+		if (checkUserInDB(name, password))
+		{
+			return false;
+		}
+		else {
 
-		//Hacer un if(si existe)
+			sql::PreparedStatement* stmt = con->prepareStatement(
+				"INSERT INTO users (nombre, password, puntuacion_total, victorias, derrotas) VALUES ( ?, ?, 0, 0, 0)"
+			);
 
-		//Si no existe---
-	//else {
-		sql::Statement* stmt = con->createStatement();
-		std::string query = "INSERT INTO users (user, password) VALUES ('" + name + "', '" + password + "')";
+			stmt->setString(1, name);
+			stmt->setString(2, password);
 
-		//para saber cuantas rows han sido actualizadas
-		int affected_rows = stmt->executeUpdate(query);	//ejecutamos la query y la guardamos en affected_rows
-		std::cout << "number of rows affected: " << affected_rows << std::endl;
+			//para saber cuantas rows han sido actualizadas
+			int affected_rows = stmt->executeUpdate();	//ejecutamos la query y la guardamos en affected_rows
+			std::cout << "number of rows affected: " << affected_rows << std::endl;
 
-		delete stmt;
-		return true;
-	//}
+			delete stmt;
+			return true;
+		}
 		
 	}
 	catch (sql::SQLException e)
@@ -65,6 +73,13 @@ bool DatabaseManager::registerUserDB(const std::string& name, const std::string&
 	}
 	return false;
 }
+
+
+bool DatabaseManager::checkUserInDB(const std::string& name, const std::string& password)
+{
+	return false;
+}
+
 
 bool DatabaseManager::validateLogin(const std::string& name, const std::string& password)
 {
@@ -76,20 +91,23 @@ bool DatabaseManager::validateLogin(const std::string& name, const std::string& 
 	try
 	{
 		
-		sql::Statement* stmt = con->createStatement();
-		sql::ResultSet* res = 
-			stmt->executeQuery("SELECT user, password FROM users WHERE user = '" + name + "' AND password = '" + password + "'");
+		sql::PreparedStatement* stmt = con->prepareStatement(
+			"SELECT nombre, password FROM users WHERE nombre = ? AND password = ?"
 
-		while (res->next())
-		{
-			std::cout << res->getString("user") << std::endl;
-		}
+		);
+		sql::ResultSet* res = stmt->executeQuery();
+
+		bool valid = res->next();
+		
 		delete res;
 		delete stmt;
+
+		return valid;
 	}
 	catch (sql::SQLException e)
 	{
 		std::cout << "Error while fetching users: " << e.what() << std::endl;
+		return false;
 	}
 }
 

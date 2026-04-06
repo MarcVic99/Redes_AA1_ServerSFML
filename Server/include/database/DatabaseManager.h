@@ -24,13 +24,14 @@ class DatabaseManager
 public:
 
 	DatabaseManager() { driver = nullptr; con = nullptr; };
-	~DatabaseManager() { disconnectDB(con); };
+	~DatabaseManager() { disconnectDB(); };
 
-	bool connectDB(sql::Driver*& driver, sql::Connection*& con);
-	void disconnectDB(sql::Connection* con);
+	bool connectDB();
+	void disconnectDB();
 
 
 	bool registerUserDB(const std::string& name, const std::string& password);
+	bool checkUserInDB(const std::string& name, const std::string& password);
 	bool validateLogin(const std::string& name, const std::string& password);
 
 	//función coger top 10

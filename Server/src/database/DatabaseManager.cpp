@@ -51,7 +51,7 @@ bool DatabaseManager::registerUserDB(const std::string& name, const std::string&
 		else {
 
 			sql::PreparedStatement* stmt = con->prepareStatement(
-				"INSERT INTO users (nombre, password, puntuacion_total, victorias, derrotas) VALUES ( ?, ?, 0, 0, 0)"
+				"INSERT INTO users (user, password, puntuacion_total, victorias, derrotas) VALUES ( ?, ?, 0, 0, 0)"
 			);
 
 			stmt->setString(1, name);
@@ -92,7 +92,7 @@ bool DatabaseManager::validateLogin(const std::string& name, const std::string& 
 	{
 		
 		sql::PreparedStatement* stmt = con->prepareStatement(
-			"SELECT nombre, password FROM users WHERE nombre = ? AND password = ?"
+			"SELECT user, password FROM users WHERE user = ? AND password = ?"
 
 		);
 		sql::ResultSet* res = stmt->executeQuery();

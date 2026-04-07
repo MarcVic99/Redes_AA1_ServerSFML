@@ -107,7 +107,7 @@ std::vector<PlayerData> DatabaseManager::getTop10()
 		sql::Statement* stmt = con->createStatement();
 		sql::ResultSet* res =
 			stmt->executeQuery(
-				"SELECT user, puntuacion_total "
+				"SELECT user, puntuacion_total, victorias, derrotas "
 				"FROM users "
 				"ORDER BY puntuacion_total DESC "
 				"LIMIT 10");
@@ -115,8 +115,10 @@ std::vector<PlayerData> DatabaseManager::getTop10()
 		while (res->next())
 		{
 			PlayerData p;
-			p.user = res->getString("user");
-			p.puntuacion_total = res->getInt("puntuacion_total");
+			p.SetUser(res->getString("user"));
+			p.SetPuntuacion(res->getInt("puntuacion_total"));
+			p.SetVictorias(res->getInt("victorias"));
+			p.SetDerrotas(res->getInt("derrotas"));
 
 			data.push_back(p);
 		}
@@ -145,13 +147,15 @@ PlayerData DatabaseManager::getPlayerbyID(int id)
 		sql::Statement* stmt = con->createStatement();
 		sql::ResultSet* res =
 			stmt->executeQuery(
-				"SELECT user, puntuacion_total "
+				"SELECT user, puntuacion_total, victorias, derrotas "
 				"FROM users WHERE id = " + std::to_string(id));
 
 		if (res->next())
 		{
-			data.user = res->getString("user");
-			data.puntuacion_total = res->getInt("puntuacion_total");
+			data.SetUser(res->getString("user"));
+			data.SetPuntuacion(res->getInt("puntuacion_total"));
+			data.SetVictorias(res->getInt("victorias"));
+			data.SetDerrotas(res->getInt("derrotas"));
 		}
 
 		delete res;

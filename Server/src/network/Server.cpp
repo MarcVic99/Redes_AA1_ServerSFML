@@ -198,10 +198,12 @@ void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
     response << static_cast<int>(top10Users.size());
 
     //cada user
-    for (const auto& cliente : top10Users)
+    for (auto& cliente : top10Users)
     {
-        response << cliente.user;
-        response << cliente.puntuacion_total;
+        response << cliente.GetUser();
+        response << cliente.GetPuntuacion();
+        response << cliente.GetVictorias();
+        response << cliente.GetDerrotas();
     }
 
     //añadir el ranking del cliente actual

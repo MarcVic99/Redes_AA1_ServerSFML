@@ -11,12 +11,7 @@
 #include <cppconn/resultset.h>
 #include <vector>
 
-
-struct PlayerData
-{
-	std::string user;
-	int puntuacion_total;
-};
+#include "core/PlayerData.h"
 
 
 class DatabaseManager

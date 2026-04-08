@@ -129,10 +129,12 @@ void Server::handleClientMessages()
 // Si es así, envia mensaje de Hello_Client y si es otro, Hello_Error
 void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
 {
+    //Leemos paquete de handshake
     std::string message;
     packet >> message;
     std::cout << "Handshake recibido: " << message << std::endl;
 
+    //Creamos paquete
     sf::Packet response;
     if (message == "HELLO_SERVER")
     {
@@ -142,6 +144,7 @@ void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
         response << tipoPaquete::HANDSHAKE_ERROR << std::string("HELLO_ERROR");
     }
 
+    //Enviamos paquete de handshake o error
     if (!sendPacket(client, response, "handsahake"))
     {
         return;
@@ -157,6 +160,7 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
 
+    //Creamos paquete
     sf::Packet response;
 
     if (databaseManager.ValidateLogin(user, password))
@@ -165,7 +169,7 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
     }else {
         response << tipoPaquete::LOGIN_ERROR << std::string("LOGIN_ERROR");
     }
-
+    //Enviamos paquete de login o error
     if (!sendPacket(client, response, "login"))
     {
         return;
@@ -182,11 +186,18 @@ void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Registro recibido:" << std::endl << "User: " << user << " Password: " << password;
 
-    databaseManager.RegisterUserDB(user, password);
-
+    //Creamos paquete
     sf::Packet response;
-    response << tipoPaquete::REGISTER_OK << std::string("CLIENT_CREATED");
 
+    if (databaseManager.RegisterUserDB(user, password))
+    {
+        response << tipoPaquete::REGISTER_OK << std::string("CLIENT_CREATED");
+    }
+    else {
+        response << tipoPaquete::REGISTER_ERROR << std::string("REGISTER_ERROR");
+    }
+
+    //Enviamos paquete de register o error
     if (!sendPacket(client, response, "register"))
     {
         return;

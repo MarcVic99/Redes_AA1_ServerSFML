@@ -157,15 +157,20 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
     packet >> password;
     std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
 
-    databaseManager.ValidateLogin(user, password);
-
     sf::Packet response;
-    response << tipoPaquete::LOGIN_OK << std::string("CLIENT_VERIFIED");
+
+    if (databaseManager.ValidateLogin(user, password))
+    {    
+        response << tipoPaquete::LOGIN_OK << std::string("CLIENT_VERIFIED");
+    }else {
+        response << tipoPaquete::LOGIN_ERROR << std::string("LOGIN_ERROR");
+    }
 
     if (!sendPacket(client, response, "login"))
     {
         return;
     }
+   
 }
 
 void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)

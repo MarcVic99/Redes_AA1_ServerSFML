@@ -31,9 +31,8 @@ public:
 
 
 	bool RegisterUserDB(const std::string& name, const std::string& password);
-	bool CheckUserInDB(const std::string& name,const std::vector<std::string>& users);
+	bool CheckUserInDB(const std::string& name);
 	bool ValidateLogin(const std::string& name, const std::string& password);
-	std::vector<std::string> GetAllUsers(sql::Connection* con);
 
 	//función coger top 10
 	std::vector <PlayerData> GetTop10();

@@ -45,7 +45,7 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 	{
 		//Select de lo que se ha pasado
 		//Comprueba si el usuario ya existe en la base de datos
-		if (CheckUserInDB(name, GetAllUsers(con)))
+		if (CheckUserInDB(name))
 		{
 			return false;
 		}
@@ -63,11 +63,7 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 			std::cout << "number of rows affected: " << affected_rows << std::endl;
 
 			delete stmt;
-
-			
-
-
-			return true;
+			return affected_rows > 0;
 		}
 		
 	}
@@ -76,39 +72,51 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 		std::cout << "Error while creating user: " << e.what() << std::endl;
 		return false;
 	}
-	return false;
 }
 
 
 //Comprueba si el usuario ya existe en la base de datos
-bool DatabaseManager::CheckUserInDB(const std::string& name, const std::vector<std::string>& users)
+bool DatabaseManager::CheckUserInDB(const std::string& name)
 {
-	for (const auto& user : users) {
+	try {
+		sql::PreparedStatement* stmt = con->prepareStatement(
+			"SELECT user FROM users WHERE user = ?"
+		);
 
-		if (user == name) {
-			std::cout << "User already exists in the database." << std::endl;
-			return true;
-		}
+		stmt->setString(1, name);
+		sql::ResultSet* res = stmt->executeQuery();
+
+		bool exists = res->next();
+
+		delete res;
+		delete stmt;
+
+		return exists;
 	}
-
-	return false;
+	catch (sql::SQLException e)
+	{
+		std::cout << "Error while creating user: " << e.what() << std::endl;
+		return false;
+	}
+	
 }
 
 
 bool DatabaseManager::ValidateLogin(const std::string& name, const std::string& password)
 {
-
 	if (con == nullptr)
 	{
 		return false;
 	}
 	try
 	{
-		
 		sql::PreparedStatement* stmt = con->prepareStatement(
-			"SELECT user, password FROM users WHERE user = ? AND password = ?"
+			"SELECT 1 FROM users WHERE user = ? AND password = ?"
 
 		);
+		stmt->setString(1,name);
+		stmt->setString(2,password);
+
 		sql::ResultSet* res = stmt->executeQuery();
 
 		bool valid = res->next();
@@ -125,33 +133,9 @@ bool DatabaseManager::ValidateLogin(const std::string& name, const std::string& 
 	}
 }
 
-//Devuelve el vector de usuarios que hay en la base de datos
-std::vector<std::string> DatabaseManager::GetAllUsers(sql::Connection* _con)
-{
-	std::vector<std::string> _users;
-	try {
-		sql::Statement* stmt = _con->createStatement();
-		sql::ResultSet* res = stmt->executeQuery("SELECT user FROM users");
-
-		std::cout << "Users in the database:" << std::endl;
-
-		while (res->next()) {
-			std::cout << res->getString("user") << std::endl;
-			_users.push_back(res->getString("user"));
-		}
-
-		delete res;
-		delete stmt;
-	}
-	catch (sql::SQLException& e) {
-		std::cout << "Error while fetching users: " << e.what() << std::endl;
-	}
-	return _users;
-}
 
 std::vector<PlayerData> DatabaseManager::GetTop10()
 {
-
 	std::vector<PlayerData> data;
 
 	if (con == nullptr)
@@ -197,7 +181,6 @@ PlayerData DatabaseManager::GetPlayerbyID(int id)
 
 	try
 	{
-
 		sql::Statement* stmt = con->createStatement();
 		sql::ResultSet* res =
 			stmt->executeQuery(

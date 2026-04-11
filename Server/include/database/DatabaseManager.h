@@ -31,7 +31,7 @@ public:
 
 
 	bool RegisterUserDB(const std::string& name, const std::string& password);
-	bool CheckUserInDB(const std::string& name);
+	bool CheckUserInDB(const std::string& name, const std::string& password);
 	bool ValidateLogin(const std::string& name, const std::string& password);
 
 	//función coger top 10

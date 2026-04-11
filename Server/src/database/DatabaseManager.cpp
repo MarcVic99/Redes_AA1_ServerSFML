@@ -45,7 +45,7 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 	{
 		//Select de lo que se ha pasado
 		//Comprueba si el usuario ya existe en la base de datos
-		if (CheckUserInDB(name))
+		if (CheckUserInDB(name, password))
 		{
 			return false;
 		}
@@ -76,8 +76,12 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 
 
 //Comprueba si el usuario ya existe en la base de datos
-bool DatabaseManager::CheckUserInDB(const std::string& name)
+bool DatabaseManager::CheckUserInDB(const std::string& name, const std::string& password)
 {
+	if (password == "")
+	{
+		return true;
+	}
 	try {
 		sql::PreparedStatement* stmt = con->prepareStatement(
 			"SELECT user FROM users WHERE user = ?"

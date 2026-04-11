@@ -50,13 +50,13 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 			return false;
 		}
 		else {
-
+			
 			sql::PreparedStatement* stmt = con->prepareStatement(
 				"INSERT INTO users (user, password, puntuacion_total, victorias, derrotas) VALUES ( ?, ?, 0, 0, 0)"
 			);
 
 			stmt->setString(1, name);
-			stmt->setString(2, password);
+			stmt->setString(2, HashPassword(password));
 
 			//para saber cuantas rows han sido actualizadas
 			int affected_rows = stmt->executeUpdate();	//ejecutamos la query y la guardamos en affected_rows
@@ -112,31 +112,37 @@ bool DatabaseManager::ValidateLogin(const std::string& name, const std::string& 
 	{
 		return false;
 	}
+
 	try
 	{
 		sql::PreparedStatement* stmt = con->prepareStatement(
-			"SELECT 1 FROM users WHERE user = ? AND password = ?"
-
+			"SELECT password FROM users WHERE user = ?"
 		);
-		stmt->setString(1,name);
-		stmt->setString(2,password);
+
+		stmt->setString(1, name);
 
 		sql::ResultSet* res = stmt->executeQuery();
 
-		bool valid = res->next();
-		
+		if (!res->next())
+		{
+			delete res;
+			delete stmt;
+			return false;
+		}
+
+		std::string storedHash = res->getString("password");
+
 		delete res;
 		delete stmt;
 
-		return valid;
+		return VerifyPassword(password, storedHash);
 	}
-	catch (sql::SQLException e)
+	catch (const sql::SQLException& e)
 	{
-		std::cout << "Error while fetching users: " << e.what() << std::endl;
+		std::cout << "Error while validating login: " << e.what() << std::endl;
 		return false;
 	}
 }
-
 
 std::vector<PlayerData> DatabaseManager::GetTop10()
 {
@@ -240,4 +246,33 @@ int DatabaseManager::GetPlayerRank(int id)
 	}
 
 	return rank;
+}
+
+
+
+//-------------------------------------- Funciones de hasheo de password -----------------------------------------
+
+std::string DatabaseManager::HashPassword(const std::string& password)
+{
+	char hashedPassword[crypto_pwhash_STRBYTES];
+
+	if (crypto_pwhash_str(
+		hashedPassword,
+		password.c_str(),
+		password.size(),
+		crypto_pwhash_OPSLIMIT_INTERACTIVE,
+		crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0)
+	{
+		return "";
+	}
+
+	return std::string(hashedPassword);
+}
+
+bool DatabaseManager::VerifyPassword(const std::string& password, const std::string storedHash)
+{
+	return crypto_pwhash_str_verify(
+		storedHash.c_str(),
+		password.c_str(),
+		password.size()) == 0;
 }

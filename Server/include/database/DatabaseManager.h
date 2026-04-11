@@ -10,7 +10,7 @@
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
 #include <vector>
-
+#include <sodium.h>
 
 struct PlayerData
 {
@@ -45,5 +45,7 @@ private:
 	sql::Driver* driver;
 	sql::Connection* con;
 
+	std::string HashPassword(const std::string& password);
+	bool VerifyPassword(const std::string& password, const std::string storeHash);
 };
 

@@ -8,14 +8,21 @@ int Server::run()
     
     if (!initializeListener())
     {
+        std::cout << "Error listener" << std::endl;
         return -1;
     }
 
     if (!databaseManager.ConnectDB())
     {
+        std::cout << "Error conectando con DB" << std::endl;
         return -1;
     }
 
+    if (sodium_init() < 0)
+    {
+        std::cout << "Error inicializando libsodium" << std::endl;
+        return -1;
+    }
     while (!serverClosed)
     {
         if (selector.wait())

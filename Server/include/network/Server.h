@@ -6,6 +6,7 @@
 #include <iostream>
 #include "PacketTypes.h"
 #include "database/DatabaseManager.h"
+#include "Room.h"
 
 class Server
 {
@@ -22,6 +23,9 @@ private:
 
 	DatabaseManager databaseManager;
 
+	std::vector<Room> _rooms;
+	std::string _nextRoomId = "1";
+
 	bool initializeListener();
 	void handleNewConnection();
 
@@ -36,6 +40,9 @@ private:
 
 
 	void removeClient(std::size_t index);
+
+	void CreateRoom(sf::TcpSocket* client, const std::string& username, std::string roomId);
+	void JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username);
 	
 	void shutdown();
 

@@ -10,7 +10,7 @@
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
 #include <vector>
-#include <sodium.h>
+//#include <sodium.h> // Para hash
 
 struct PlayerData
 {

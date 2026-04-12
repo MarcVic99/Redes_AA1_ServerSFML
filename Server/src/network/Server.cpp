@@ -18,11 +18,12 @@ int Server::run()
         return -1;
     }
 
-    if (sodium_init() < 0)
+	//      Libsodium para el hash de password  
+    /*if (sodium_init() < 0)
     {
         std::cout << "Error inicializando libsodium" << std::endl;
         return -1;
-    }
+    }*/
     while (!serverClosed)
     {
         if (selector.wait())
@@ -114,6 +115,25 @@ void Server::handleClientMessages()
                     case tipoPaquete::GET_RANKING:
                         handleGetRanking(*clients[i], packet);
                         break;
+                    case tipoPaquete::CREATE_ROOM:
+                    {
+                        std::string username;
+                        std::string roomId;
+                        packet >> roomId >> username;
+                        CreateRoom(clients[i], username, roomId);
+                        break;
+                    }
+
+                    case tipoPaquete::JOIN_ROOM:
+                    {
+                        std::string roomId;
+                        std::string username;
+
+                        packet >> roomId >> username;
+
+                        JoinRoom(clients[i], roomId, username);
+                        break;
+                    }
 
                     default:
                         break;
@@ -165,7 +185,7 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
 
     packet >> user;
     packet >> password;
-    std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password;
+    std::cout << "Login recibido:" << std::endl << "User: " << user << " Password: " << password << std::endl;
 
     //Creamos paquete
     sf::Packet response;
@@ -266,6 +286,66 @@ void Server::removeClient(std::size_t index)
     selector.remove(*clients[index]);
     delete clients[index];
     clients.erase(clients.begin() + index);
+}
+
+void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std::string roomId)
+{
+    Room room;
+    room.SetId(roomId);
+    room.AddPlayer(client, username);
+
+    _rooms.push_back(room);
+
+    std::cout << "Created room id: " << room.GetId() << std::endl;
+    std::cout << "After create, rooms: " << _rooms.size() << std::endl;
+    std::cout << "Players in room: " << room.GetPlayers().size() << std::endl;
+
+    sf::Packet packet;
+    packet << tipoPaquete::CREATE_ROOM_OK << room.GetId();
+
+    client->send(packet);
+}
+
+void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username)
+{
+    std::cout << "Trying join room: " << roomId << std::endl;
+    for (auto& room : _rooms)
+    {
+        std::cout << "Checking room id: " << room.GetId() << " players: " << room.GetPlayers().size() << std::endl;
+        if (room.GetId() == roomId)
+        {
+            if (room.GetPlayers().size() >= room.GetMaxPlayers())
+            {
+                sf::Packet packet;
+                packet << tipoPaquete::JOIN_ROOM_ERROR;
+                client->send(packet);
+                return;
+            }
+            for (auto& player : room.GetPlayers()) {
+                if (player.GetSocket() == client) {
+                    sf::Packet packet;
+                    packet << tipoPaquete::JOIN_ROOM_ERROR;
+                    client->send(packet);
+					std::cout << "Client already in room " << roomId << std::endl;
+                    return;
+                }
+            }
+			room.AddPlayer(client, username);
+
+            std::cout << "Joined room " << roomId << ", players now: " << room.GetPlayers().size() << std::endl;
+
+            sf::Packet packet;
+            packet << tipoPaquete::JOIN_ROOM_OK << roomId;
+            client->send(packet);
+
+            return;
+        }
+    }
+
+    // sala no encontrada
+    sf::Packet packet;
+    packet << tipoPaquete::JOIN_ROOM_ERROR;
+    client->send(packet);
 }
 
 void Server::shutdown()

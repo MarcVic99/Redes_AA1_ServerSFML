@@ -13,7 +13,16 @@ enum class tipoPaquete {
     REGISTER_OK,
     REGISTER_ERROR,
     GET_RANKING,
-    RECEIVE_RANKING
+    RECEIVE_RANKING,
+
+    CREATE_ROOM,
+    CREATE_ROOM_OK,
+    CREATE_ROOM_ERROR,
+    JOIN_ROOM,
+    JOIN_ROOM_OK,
+    JOIN_ROOM_ERROR,
+    ROOM_WAITING,
+    ROOM_READY
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

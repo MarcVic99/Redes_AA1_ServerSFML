@@ -55,8 +55,9 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 				"INSERT INTO users (user, password, puntuacion_total, victorias, derrotas) VALUES ( ?, ?, 0, 0, 0)"
 			);
 
-			stmt->setString(1, name);
-			stmt->setString(2, HashPassword(password));
+			//			Descomentar al arreglas el hash de password
+			/*stmt->setString(1, name);
+			stmt->setString(2, HashPassword(password));*/
 
 			//para saber cuantas rows han sido actualizadas
 			int affected_rows = stmt->executeUpdate();	//ejecutamos la query y la guardamos en affected_rows
@@ -135,7 +136,8 @@ bool DatabaseManager::ValidateLogin(const std::string& name, const std::string& 
 		delete res;
 		delete stmt;
 
-		return VerifyPassword(password, storedHash);
+		return password == storedHash; // Para pruebas sin hash
+		//return VerifyPassword(password, storedHash);
 	}
 	catch (const sql::SQLException& e)
 	{
@@ -252,27 +254,27 @@ int DatabaseManager::GetPlayerRank(int id)
 
 //-------------------------------------- Funciones de hasheo de password -----------------------------------------
 
-std::string DatabaseManager::HashPassword(const std::string& password)
-{
-	char hashedPassword[crypto_pwhash_STRBYTES];
-
-	if (crypto_pwhash_str(
-		hashedPassword,
-		password.c_str(),
-		password.size(),
-		crypto_pwhash_OPSLIMIT_INTERACTIVE,
-		crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0)
-	{
-		return "";
-	}
-
-	return std::string(hashedPassword);
-}
-
-bool DatabaseManager::VerifyPassword(const std::string& password, const std::string storedHash)
-{
-	return crypto_pwhash_str_verify(
-		storedHash.c_str(),
-		password.c_str(),
-		password.size()) == 0;
-}
+//std::string DatabaseManager::HashPassword(const std::string& password)
+//{
+//	char hashedPassword[crypto_pwhash_STRBYTES];
+//
+//	if (crypto_pwhash_str(
+//		hashedPassword,
+//		password.c_str(),
+//		password.size(),
+//		crypto_pwhash_OPSLIMIT_INTERACTIVE,
+//		crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0)
+//	{
+//		return "";
+//	}
+//
+//	return std::string(hashedPassword);
+//}
+//
+//bool DatabaseManager::VerifyPassword(const std::string& password, const std::string storedHash)
+//{
+//	return crypto_pwhash_str_verify(
+//		storedHash.c_str(),
+//		password.c_str(),
+//		password.size()) == 0;
+//}

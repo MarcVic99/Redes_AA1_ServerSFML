@@ -292,6 +292,17 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std:
 {
     Room room;
     room.SetId(roomId);
+
+    for (auto& room : _rooms) {
+        if (room.GetId() == roomId) {
+            sf::Packet packet;
+            packet << tipoPaquete::CREATE_ROOM_ERROR;
+            client->send(packet);
+            std::cout << "Room id " << roomId << " already exists" << std::endl;
+            return;
+		}
+    }
+
     room.AddPlayer(client, username);
 
     _rooms.push_back(room);

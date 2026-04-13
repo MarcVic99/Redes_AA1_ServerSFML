@@ -18,12 +18,13 @@ int Server::run()
         return -1;
     }
 
-	//      Libsodium para el hash de password  
-    /*if (sodium_init() < 0)
+	// Libsodium para el hash de password  
+    if (sodium_init() < 0)
     {
         std::cout << "Error inicializando libsodium" << std::endl;
         return -1;
-    }*/
+    }
+
     while (!serverClosed)
     {
         if (selector.wait())

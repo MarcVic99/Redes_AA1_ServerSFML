@@ -4,6 +4,7 @@
 
 bool Room::AddPlayer(sf::TcpSocket* _socket, const std::string& _username) {
     Player newPlayer = Player(_socket, _username);
+
     for (auto& player : players)
     {
         if (newPlayer.GetSocket() == player.GetSocket())

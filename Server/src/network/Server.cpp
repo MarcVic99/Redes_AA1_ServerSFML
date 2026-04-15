@@ -5,7 +5,7 @@
 int Server::run()
 {
     bool serverClosed = false;
-    
+
     if (!InitializeListener())
     {
         std::cout << "Error listener" << std::endl;
@@ -18,7 +18,7 @@ int Server::run()
         return -1;
     }
 
-	// Libsodium para el hash de password  
+    // Libsodium para el hash de password  
     if (sodium_init() < 0)
     {
         std::cout << "Error inicializando libsodium" << std::endl;
@@ -370,10 +370,18 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
             if (room.IsFull())
             {
                 std::cout << "Room " << roomId << " is full. Starting game..." << std::endl;
+
+                //comprobacion de jugadores not null
+                for (const auto& p : room.GetPlayers())
+                {
+                    if (p.GetSocket() == nullptr)
+                    {
+                        std::cout << "ERROR: Player con socket NULL\n";
+                    }
+                }
                 
                 // 1. Crear GameSession
-                GameSession session(room.GetId(), room.GetPlayers());
-                _sessions.push_back(session);
+                _sessions.emplace_back(room.GetId(), room.GetPlayers());
 
                 // 2. Notificar a todos los jugadores <-- Falta implementar en el cliente!!!!
                 sf::Packet startPacket;

@@ -10,21 +10,18 @@ class Room {
 
 public:
 	int GetMaxPlayers() const { return MAX_PLAYERS; }
-    std::string GetId() const { return id; }
-	void SetId(std::string newId) { id = newId; }
+
+    const std::string GetId() const { return id; }
+    void SetId(const std::string& newId) { id = newId; }
+    
     const std::vector<Player>& GetPlayers() const { return players; }
 
-    bool AddPlayer(sf::TcpSocket* _socket, const std::string& _username) {
-        Player newPlayer = Player(_socket, _username);
-        for (auto& player : players)
-        {
-            if (newPlayer.GetSocket() == player.GetSocket())
-                return false; // ya está dentro
-        }
-        if (players.size() < MAX_PLAYERS) {
-            players.push_back(newPlayer);
-            return true;
-        }
-        return false;
-    }
+
+    bool IsFull() const { return players.size() >= MAX_PLAYERS; }
+
+    bool HasPlayer();
+
+    bool AddPlayer(sf::TcpSocket* _socket, const std::string& _username);
+
+    void RemovePlayer();
 };

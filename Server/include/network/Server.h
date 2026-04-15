@@ -24,26 +24,25 @@ private:
 	DatabaseManager databaseManager;
 
 	std::vector<Room> _rooms;
-	std::string _nextRoomId = "1";
 
-	bool initializeListener();
-	void handleNewConnection();
+	bool InitializeListener();
+	void HandleNewConnection();
 
-	void handleClientMessages();
-	void handleHandshake(sf::TcpSocket& client, sf::Packet& packet);
-	void handleLogin(sf::TcpSocket& client, sf::Packet packet);
-	void handleRegister(sf::TcpSocket& client, sf::Packet packet);
-	void handleGetRanking(sf::TcpSocket& client, sf::Packet packet);
-
-
-	bool sendPacket(sf::TcpSocket& socket,sf::Packet& packet, const std::string& context);
+	void HandleClientMessages();
+	void HandleHandshake(sf::TcpSocket& client, sf::Packet& packet);
+	void HandleLogin(sf::TcpSocket& client, sf::Packet packet);
+	void HandleRegister(sf::TcpSocket& client, sf::Packet packet);
+	void HandleGetRanking(sf::TcpSocket& client, sf::Packet packet);
 
 
-	void removeClient(std::size_t index);
+	bool SendPacket(sf::TcpSocket& socket,sf::Packet& packet, const std::string& context);
+
+
+	void RemoveClient(std::size_t index);
 
 	void CreateRoom(sf::TcpSocket* client, const std::string& username, std::string roomId);
 	void JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username);
 	
-	void shutdown();
+	void Shutdown();
 
 };

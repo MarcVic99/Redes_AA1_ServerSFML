@@ -18,7 +18,6 @@ class GameBoard
 {
 
 private:
-
 	//recordad acceder con i(rows) y j(columns)
 	std::vector<Cell> board;
 	int numCells = NUM_ROWS * NUM_COLUMNS;
@@ -27,12 +26,12 @@ private:
 
 public:
 
-	GameBoard();
+	GameBoard() {};
 
-	bool MakeMove(Player* p, int row, int column);
+	bool MakeMove(Cell cell, int row, int column);
 	Cell GetCell(int row, int column) const;
 
-	bool CheckWin(Player* p);
+	bool CheckWin(Cell cell);
 	void Reset();
 
 	//getters

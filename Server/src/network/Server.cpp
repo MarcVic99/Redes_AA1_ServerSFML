@@ -6,7 +6,7 @@ int Server::run()
 {
     bool serverClosed = false;
     
-    if (!initializeListener())
+    if (!InitializeListener())
     {
         std::cout << "Error listener" << std::endl;
         return -1;
@@ -31,26 +31,26 @@ int Server::run()
         {
             if (selector.isReady(listener))
             {
-                handleNewConnection();
+                HandleNewConnection();
             }
             else
             {
-                handleClientMessages();
+                HandleClientMessages();
             }
         }
     }
     databaseManager.disconnectDB();
-    shutdown();
+    Shutdown();
     return 0;
 }
 
 
 
 //El server empieza a escuchar 
-bool Server::initializeListener()
+bool Server::InitializeListener()
 {
-    if (listener.listen(LISTENER_PORT) != sf::Socket::Status::Done)
-    {
+    if (listener.listen(LISTENER_PORT, sf::IpAddress::Any) != sf::Socket::Status::Done) 
+        {
         std::cout << "Error al intentar escuchar en el puerto " << LISTENER_PORT << std::endl;
         return false;
     }
@@ -65,7 +65,7 @@ bool Server::initializeListener()
 //Crea un nuevo cliente 
   // y si es aceptado se añade al vector y al selector. 
   // Sino, se borra
-void Server::handleNewConnection() 
+void Server::HandleNewConnection() 
 {
   
     sf::TcpSocket* newClient = new sf::TcpSocket();
@@ -86,7 +86,7 @@ void Server::handleNewConnection()
 
 
 //Por cada cliente, se comprueba que tipo de paquete ha llegado y gestiona
-void Server::handleClientMessages()
+void Server::HandleClientMessages()
 {
     for (int i = 0; i < static_cast<int>(clients.size()); i++)
     {
@@ -103,18 +103,18 @@ void Server::handleClientMessages()
                 switch (tipo)
                 {
                     case tipoPaquete::HANDSHAKE:
-                        handleHandshake(*clients[i], packet);
+                        HandleHandshake(*clients[i], packet);
                         break;
 
                     case tipoPaquete::LOGIN:
-                        handleLogin(*clients[i], packet);
+                        HandleLogin(*clients[i], packet);
                         break;
 
                     case tipoPaquete::REGISTER:
-                        handleRegister(*clients[i], packet);
+                        HandleRegister(*clients[i], packet);
                         break;
                     case tipoPaquete::GET_RANKING:
-                        handleGetRanking(*clients[i], packet);
+                        HandleGetRanking(*clients[i], packet);
                         break;
                     case tipoPaquete::CREATE_ROOM:
                     {
@@ -143,7 +143,7 @@ void Server::handleClientMessages()
             else if (status == sf::Socket::Status::Disconnected)
             {
                 std::cout << "Cliente desconectado" << std::endl;
-                removeClient(i);
+                RemoveClient(i);
                 i--;
             }
         }
@@ -155,7 +155,7 @@ void Server::handleClientMessages()
 
 //El server recibe un mensaje de Handshake y comprueba si el mensaje es el correcto.
 // Si es así, envia mensaje de Hello_Client y si es otro, Hello_Error
-void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
+void Server::HandleHandshake(sf::TcpSocket& client, sf::Packet& packet)
 {
     //Leemos paquete de handshake
     std::string message;
@@ -173,13 +173,13 @@ void Server::handleHandshake(sf::TcpSocket& client, sf::Packet& packet)
     }
 
     //Enviamos paquete de handshake o error
-    if (!sendPacket(client, response, "handsahake"))
+    if (!SendPacket(client, response, "handsahake"))
     {
         return;
     }
 }
 
-void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
+void Server::HandleLogin(sf::TcpSocket& client, sf::Packet packet)
 {
     std::string user;
     std::string password;
@@ -198,14 +198,14 @@ void Server::handleLogin(sf::TcpSocket& client, sf::Packet packet)
         response << tipoPaquete::LOGIN_ERROR << std::string("LOGIN_ERROR");
     }
     //Enviamos paquete de login o error
-    if (!sendPacket(client, response, "login"))
+    if (!SendPacket(client, response, "login"))
     {
         return;
     }
    
 }
 
-void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
+void Server::HandleRegister(sf::TcpSocket& client, sf::Packet packet)
 {
     std::string user;
     std::string password;
@@ -226,14 +226,14 @@ void Server::handleRegister(sf::TcpSocket& client, sf::Packet packet)
     }
 
     //Enviamos paquete de register o error
-    if (!sendPacket(client, response, "register"))
+    if (!SendPacket(client, response, "register"))
     {
         return;
     }
 }
 
 
-void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
+void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet packet)
 {
     //el cliente debería enviar su id para el 11º puesto
     int userID;
@@ -262,7 +262,7 @@ void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
     int userRank = databaseManager.GetPlayerRank(userID);
     response << userRank;
 
-    if (!sendPacket(client, response, "getRegister"))
+    if (!SendPacket(client, response, "getRegister"))
     {
         return;
     }
@@ -270,7 +270,7 @@ void Server::handleGetRanking(sf::TcpSocket& client, sf::Packet packet)
 }
 
 
-bool Server::sendPacket(sf::TcpSocket& socket, sf::Packet& packet, const std::string& context)
+bool Server::SendPacket(sf::TcpSocket& socket, sf::Packet& packet, const std::string& context)
 {
     if (socket.send(packet) != sf::Socket::Status::Done)
     {
@@ -281,13 +281,14 @@ bool Server::sendPacket(sf::TcpSocket& socket, sf::Packet& packet, const std::st
 }
 
 
-void Server::removeClient(std::size_t index)
+void Server::RemoveClient(std::size_t index)
 {
     //Se elimina el cliente del selector y del vector cuando se desconecta
     selector.remove(*clients[index]);
     delete clients[index];
     clients.erase(clients.begin() + index);
 }
+
 
 void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std::string roomId)
 {
@@ -360,7 +361,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
     client->send(packet);
 }
 
-void Server::shutdown()
+void Server::Shutdown()
 {
     //Server cerrado
     for (sf::TcpSocket* client : clients)

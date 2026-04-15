@@ -144,7 +144,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="GameBoard.cpp" />
+    <ClCompile Include="src\game\GameSession.cpp" />
+    <ClCompile Include="src\network\Room.cpp" />
+    <ClCompile Include="src\game\GameBoard.cpp" />
     <ClCompile Include="include\core\Constants.h" />
     <ClCompile Include="include\network\Server.h" />
     <ClCompile Include="include\network\PacketTypes.h" />
@@ -157,8 +159,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GameBoard.h" />
+    <ClInclude Include="include\game\GameBoard.h" />
     <ClInclude Include="include\database\DatabaseManager.h" />
+    <ClInclude Include="include\game\GameSession.h" />
     <ClInclude Include="include\network\Player.h" />
     <ClInclude Include="include\network\Room.h" />
   </ItemGroup>

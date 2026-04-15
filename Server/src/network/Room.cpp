@@ -18,9 +18,9 @@ bool Room::AddPlayer(sf::TcpSocket* _socket, const std::string& _username) {
 
 bool Room::RemovePlayer(sf::TcpSocket* socket)
 {
-    for (auto player = players.begin(); player != players.end(); ++it)
+    for (auto player = players.begin(); player != players.end(); ++player)
     {
-        if (it->GetSocket() == socket)
+        if (player->GetSocket() == socket)
         {
             std::cout << "Player removed from room " << id << std::endl;
 

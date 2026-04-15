@@ -27,8 +27,8 @@ public:
     void AdvanceTurn();
 
     bool IsPlayerTurn(sf::TcpSocket* socket) const;
+    
     bool IsFinished() const { return finished; }
-
     const GameBoard& GetBoard() const { return board; };
     const std::vector<Player>& GetPlayers() const { return players; };
 };

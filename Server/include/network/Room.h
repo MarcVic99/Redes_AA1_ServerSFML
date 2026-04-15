@@ -1,12 +1,14 @@
 #pragma once
 #include <vector>
 #include "Player.h"
+
 #include <string>
+#include "core/Constants.h"
+#include <iostream>
 
 class Room {
     std::string id;
     std::vector<Player> players;
-    static const int MAX_PLAYERS = 4;
 
 public:
 	int GetMaxPlayers() const { return MAX_PLAYERS; }
@@ -19,9 +21,12 @@ public:
 
     bool IsFull() const { return players.size() >= MAX_PLAYERS; }
 
-    bool HasPlayer();
+    bool HasPlayer(sf::TcpSocket* socket) const;
 
     bool AddPlayer(sf::TcpSocket* _socket, const std::string& _username);
 
-    void RemovePlayer();
+    bool RemovePlayer(sf::TcpSocket* socket);
+
+    int GetPlayerIndex(sf::TcpSocket* socket) const;
+
 };

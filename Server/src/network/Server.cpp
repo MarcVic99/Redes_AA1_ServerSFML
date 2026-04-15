@@ -102,46 +102,61 @@ void Server::HandleClientMessages()
 
                 switch (tipo)
                 {
-                    case tipoPaquete::HANDSHAKE:
-                        HandleHandshake(*clients[i], packet);
-                        break;
+                case tipoPaquete::HANDSHAKE:
+                    HandleHandshake(*clients[i], packet);
+                    break;
 
-                    case tipoPaquete::LOGIN:
-                        HandleLogin(*clients[i], packet);
-                        break;
+                case tipoPaquete::LOGIN:
+                    HandleLogin(*clients[i], packet);
+                    break;
 
-                    case tipoPaquete::REGISTER:
-                        HandleRegister(*clients[i], packet);
-                        break;
-                    case tipoPaquete::GET_RANKING:
-                        HandleGetRanking(*clients[i], packet);
-                        break;
-                    case tipoPaquete::CREATE_ROOM:
-                    {
-                        std::string username;
-                        std::string roomId;
-                        packet >> roomId >> username;
-                        CreateRoom(clients[i], username, roomId);
-                        break;
-                    }
+                case tipoPaquete::REGISTER:
+                    HandleRegister(*clients[i], packet);
+                    break;
+                case tipoPaquete::GET_RANKING:
+                    HandleGetRanking(*clients[i], packet);
+                    break;
+                case tipoPaquete::CREATE_ROOM:
+                {
+                    std::string username;
+                    std::string roomId;
+                    packet >> roomId >> username;
+                    CreateRoom(clients[i], username, roomId);
+                    break;
+                }
 
-                    case tipoPaquete::JOIN_ROOM:
-                    {
-                        std::string roomId;
-                        std::string username;
+                case tipoPaquete::JOIN_ROOM:
+                {
+                    std::string roomId;
+                    std::string username;
 
-                        packet >> roomId >> username;
+                    packet >> roomId >> username;
 
-                        JoinRoom(clients[i], roomId, username);
-                        break;
-                    }
+                    JoinRoom(clients[i], roomId, username);
+                    break;
+                }
 
-                    default:
-                        break;
+                default:
+                    break;
                 }
             }
+
             else if (status == sf::Socket::Status::Disconnected)
             {
+                std::cout << "Cliente desconectado" << std::endl;
+
+                // quitar de rooms
+                for (auto& room : _rooms)
+                {
+                    room.RemovePlayer(clients[i]);
+                }
+
+                // (futuro) quitar de partidas activas
+                // for (auto& session : sessions)
+                // {
+                //     session.RemovePlayer(clients[i]);
+                // }
+
                 std::cout << "Cliente desconectado" << std::endl;
                 RemoveClient(i);
                 i--;
@@ -319,6 +334,7 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std:
     client->send(packet);
 }
 
+
 void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username)
 {
     std::cout << "Trying join room: " << roomId << std::endl;
@@ -351,6 +367,27 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
             packet << tipoPaquete::JOIN_ROOM_OK << roomId;
             client->send(packet);
 
+            if (room.IsFull())
+            {
+                std::cout << "Room " << roomId << " is full. Starting game..." << std::endl;
+                
+                // 1. Crear GameSession
+                GameSession session(room.GetId(), room.GetPlayers());
+                _sessions.push_back(session);
+
+                // 2. Notificar a todos los jugadores <-- Falta implementar en el cliente!!!!
+                sf::Packet startPacket;
+                startPacket << tipoPaquete::START_GAME << room.GetId();
+
+                for (const auto& player : room.GetPlayers())
+                {
+                    player.GetSocket()->send(startPacket);
+                }
+
+                // 3. (Opcional ahora, recomendable luego)
+                // eliminar room del lobby
+                // _rooms.erase(...)
+            }
             return;
         }
     }
@@ -361,6 +398,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
     client->send(packet);
 }
 
+
 void Server::Shutdown()
 {
     //Server cerrado
@@ -370,4 +408,3 @@ void Server::Shutdown()
     }
     clients.clear();
 }
-

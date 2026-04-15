@@ -21,9 +21,6 @@ private:
 	//recordad acceder con i(rows) y j(columns)
 	std::vector<Cell> board;
 	int numCells = NUM_ROWS * NUM_COLUMNS;
-
-	Player actualPlayer;
-
 public:
 
 	GameBoard() {};
@@ -33,10 +30,5 @@ public:
 
 	bool CheckWin(Cell cell);
 	void Reset();
-
-	//getters
-	Player GetCurrentPlayer() { return actualPlayer; }
-
-
 };
 

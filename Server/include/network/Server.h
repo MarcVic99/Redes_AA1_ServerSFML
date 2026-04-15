@@ -7,6 +7,7 @@
 #include "PacketTypes.h"
 #include "database/DatabaseManager.h"
 #include "Room.h"
+#include "game/GameSession.h"
 
 class Server
 {
@@ -24,6 +25,7 @@ private:
 	DatabaseManager databaseManager;
 
 	std::vector<Room> _rooms;
+	std::vector<GameSession> _sessions;
 
 	bool InitializeListener();
 	void HandleNewConnection();
@@ -44,5 +46,4 @@ private:
 	void JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username);
 	
 	void Shutdown();
-
 };

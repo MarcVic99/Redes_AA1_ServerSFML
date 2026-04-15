@@ -22,7 +22,8 @@ enum class tipoPaquete {
     JOIN_ROOM_OK,
     JOIN_ROOM_ERROR,
     ROOM_WAITING,
-    ROOM_READY
+    ROOM_READY,
+    START_GAME
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

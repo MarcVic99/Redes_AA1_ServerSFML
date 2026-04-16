@@ -9,7 +9,7 @@ class GameSession
 private:
     std::string roomId;
 
-    std::vector<Player*> players;
+    std::vector<Player> players;
     std::vector<bool> isSpectator;
 
     GameBoard board;
@@ -20,7 +20,7 @@ private:
     bool finished;
 
 public:
-    GameSession(const std::string& id, const std::vector<Player*>& players);
+    GameSession(const std::string& id, const std::vector<Player>& players);
 
     bool MakeMove(sf::TcpSocket* socket, int row, int col);
 
@@ -30,5 +30,5 @@ public:
     
     bool IsFinished() const { return finished; }
     const GameBoard& GetBoard() const { return board; };
-    const std::vector<Player*>& GetPlayers() const { return players; };
+    const std::vector<Player> GetPlayers() const { return players; };
 };

@@ -13,10 +13,11 @@ class Room {
 public:
 	int GetMaxPlayers() const { return MAX_PLAYERS; }
 
-    const std::string GetId() const { return id; }
+    const std::string& GetId() const { return id; }
+
     void SetId(const std::string& newId) { id = newId; }
     
-    const std::vector<Player>& GetPlayers() const { return players; }
+    const std::vector<Player> GetPlayers() const { return players; }
 
 
     bool IsFull() const { return players.size() >= MAX_PLAYERS; }

@@ -1,9 +1,9 @@
 #include "game/GameSession.h"
 
-GameSession::GameSession(const std::string& id, const std::vector<Player*>& players)
-    : roomId(id), 
-    players(players), 
-    currentTurnIndex(0), 
+GameSession::GameSession(const std::string& id, const std::vector<Player>& players)
+    : roomId(id),
+    players(players),
+    currentTurnIndex(0),
     finished(false)
 {
     isSpectator.resize(players.size(), false);
@@ -11,7 +11,7 @@ GameSession::GameSession(const std::string& id, const std::vector<Player*>& play
 
 bool GameSession::IsPlayerTurn(sf::TcpSocket* socket) const
 {
-    return players[currentTurnIndex]->GetSocket() == socket;
+    return players[currentTurnIndex].GetSocket() == socket;
 }
 
 
@@ -34,7 +34,7 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col)
     // comprobar victoria
     if (board.CheckWin(cell))
     {
-        winners.push_back(players[playerIndex]->GetUsername());
+        winners.push_back(players[playerIndex].GetUsername());
         isSpectator[playerIndex] = true;
 
         if (winners.size() >= 3)

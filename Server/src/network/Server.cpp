@@ -381,7 +381,8 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
                 }
                 
                 // 1. Crear GameSession
-                _sessions.emplace_back(room.GetId(), room.GetPlayers());
+                GameSession session(room.GetId(), room.GetPlayers());
+                _sessions.push_back(session);
 
                 // 2. Notificar a todos los jugadores <-- Falta implementar en el cliente!!!!
                 sf::Packet startPacket;

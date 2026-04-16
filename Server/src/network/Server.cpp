@@ -338,9 +338,13 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std:
 void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username)
 {
     std::cout << "Trying join room: " << roomId << std::endl;
-    for (auto& room : _rooms)
+    for (int i = 0; i < _rooms.size(); i++)
     {
-        std::cout << "Checking room id: " << room.GetId() << " players: " << room.GetPlayers().size() << std::endl;
+        Room& room = _rooms[i];
+
+        std::cout << "Checking room id: " << room.GetId()
+            << " players: " << room.GetPlayers().size() << std::endl;
+
         if (room.GetId() == roomId)
         {
             if (room.GetPlayers().size() >= room.GetMaxPlayers())
@@ -350,18 +354,23 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
                 client->send(packet);
                 return;
             }
-            for (auto& player : room.GetPlayers()) {
-                if (player.GetSocket() == client) {
+
+            for (auto& player : room.GetPlayers())
+            {
+                if (player.GetSocket() == client)
+                {
                     sf::Packet packet;
                     packet << tipoPaquete::JOIN_ROOM_ERROR;
                     client->send(packet);
-					std::cout << "Client already in room " << roomId << std::endl;
+                    std::cout << "Client already in room " << roomId << std::endl;
                     return;
                 }
             }
-			room.AddPlayer(client, username);
 
-            std::cout << "Joined room " << roomId << ", players now: " << room.GetPlayers().size() << std::endl;
+            room.AddPlayer(client, username);
+
+            std::cout << "Joined room " << roomId
+                << ", players now: " << room.GetPlayers().size() << std::endl;
 
             sf::Packet packet;
             packet << tipoPaquete::JOIN_ROOM_OK << roomId;
@@ -371,35 +380,23 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
             {
                 std::cout << "Room " << roomId << " is full. Starting game..." << std::endl;
 
-                //comprobacion de jugadores not null
-                for (const auto& p : room.GetPlayers())
-                {
-                    if (p.GetSocket() == nullptr)
-                    {
-                        std::cout << "ERROR: Player con socket NULL\n";
-                    }
-                }
-                
-                std::cout << "Creando sesion..." << std::endl;
-
-                // 1. Crear GameSession
                 GameSession session(room.GetId(), room.GetPlayers());
                 _sessions.push_back(session);
 
-                std::cout << "Sesion creada" << std::endl;
-                // 2. Notificar a todos los jugadores <-- Falta implementar en el cliente!!!!
                 sf::Packet startPacket;
-                startPacket << tipoPaquete::START_GAME << room.GetId() << static_cast<int>(room.GetPlayers().size());;
+                startPacket << tipoPaquete::START_GAME
+                    << room.GetId()
+                    << static_cast<int>(room.GetPlayers().size());
 
                 for (const auto& player : room.GetPlayers())
                 {
                     player.GetSocket()->send(startPacket);
                 }
 
-                // 3. (Opcional ahora, recomendable luego)
-                // eliminar room del lobby
-                // _rooms.erase(...)
+                //Borramos room
+                _rooms.erase(_rooms.begin() + i);
             }
+
             return;
         }
     }

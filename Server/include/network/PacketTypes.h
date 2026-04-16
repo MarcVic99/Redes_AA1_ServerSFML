@@ -21,8 +21,7 @@ enum class tipoPaquete {
     JOIN_ROOM,
     JOIN_ROOM_OK,
     JOIN_ROOM_ERROR,
-    ROOM_WAITING,
-    ROOM_READY,
+
     START_GAME
 };
 

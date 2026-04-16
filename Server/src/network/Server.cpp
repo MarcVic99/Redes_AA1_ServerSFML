@@ -389,7 +389,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
                 std::cout << "Sesion creada" << std::endl;
                 // 2. Notificar a todos los jugadores <-- Falta implementar en el cliente!!!!
                 sf::Packet startPacket;
-                startPacket << tipoPaquete::START_GAME << room.GetId();
+                startPacket << tipoPaquete::START_GAME << room.GetId() << static_cast<int>(room.GetPlayers().size());;
 
                 for (const auto& player : room.GetPlayers())
                 {

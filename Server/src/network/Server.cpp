@@ -426,14 +426,14 @@ void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& play
     packet << tipoPaquete::PLAYERS_GAME_RESPONSE;
 
     // número de jugadores
-    packet << static_cast<int>(players.size());
+    packet << static_cast<std::int32_t>(players.size());
 
     // enviar username + color
     for (const auto& player : players)
     {
         packet << player.GetUsername();
         
-        packet << static_cast<int>(player.GetPlayerColor());
+        packet << static_cast<std::int32_t>(player.GetPlayerColor());
     }
 
     client->send(packet);

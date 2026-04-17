@@ -139,6 +139,8 @@ void Server::HandleClientMessages()
                 {
                     GameSession* session = GetSessionByClient(clients[i]);
 
+					std::cout << "Client requests players in game. Session found: " << (session != nullptr) << std::endl;
+
                     if (session == nullptr)
                     {
                         std::cout << "Session not found for client" << std::endl;

@@ -233,7 +233,7 @@ void Server::HandleLogin(sf::TcpSocket& client, sf::Packet packet)
         return;
     }
 
-    SendPlayerInfo(&client, user);
+    SendPlayerInfo(client, user);
    
 }
 
@@ -263,7 +263,7 @@ void Server::HandleRegister(sf::TcpSocket& client, sf::Packet packet)
         return;
     }
 
-    SendPlayerInfo(&client, user);
+    SendPlayerInfo(client, user);
 }
 
 
@@ -446,7 +446,7 @@ void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& play
     client->send(packet);
 }
 
-void Server::SendPlayerInfo(sf::TcpSocket* client, std::string username)
+void Server::SendPlayerInfo(sf::TcpSocket& client, std::string username)
 {
     PlayerData data = databaseManager.GetPlayerbyName(username);
 
@@ -461,10 +461,7 @@ void Server::SendPlayerInfo(sf::TcpSocket* client, std::string username)
 
     std::cout << "Sending player info to client: ID=" << data.id << " Username='" << data.user << "' size=" << data.user.size() << std::endl;
 
-	client->send(packet);
-
-    /*if(!SendPacket(client, packet, "user_info"))
-        return;*/
+    SendPacket(client, packet, "user_info");
 }
 
 GameSession* Server::GetSessionByClient(sf::TcpSocket* client)

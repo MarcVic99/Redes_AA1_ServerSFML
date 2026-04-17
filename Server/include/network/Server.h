@@ -46,7 +46,7 @@ private:
 	void JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username);
 
 	//enviar al jugador su propia información para que se reconozca
-	void SendPlayerInfo(sf::TcpSocket* client, std::string username);
+	void SendPlayerInfo(sf::TcpSocket& client, std::string username);
 
 	void SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players);
 

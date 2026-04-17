@@ -450,10 +450,9 @@ void Server::SendPlayerInfo(sf::TcpSocket& client, std::string username)
     }
 
     sf::Packet packet;
+    packet << tipoPaquete::USER_INFO << static_cast<std::int32_t>(data.id) << data.user;
 
-    packet << tipoPaquete::USER_INFO;
-    packet << data.id;
-    packet << data.user;
+    std::cout << "Sending player info to client: ID=" << data.id << " Username='" << data.user << "' size=" << data.user.size() << std::endl;
 
     SendPacket(client, packet, "user_info");
 }

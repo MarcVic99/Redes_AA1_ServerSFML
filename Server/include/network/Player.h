@@ -17,6 +17,7 @@ public:
 	sf::TcpSocket* socket;
 	std::string username;
 	PlayerColor color;
+	int id;
 
 	Player() : socket(nullptr), username("") {}
 	Player(sf::TcpSocket* socket, const std::string& username) : socket(socket), username(username)  {}
@@ -26,6 +27,7 @@ public:
 	sf::TcpSocket* GetSocket() const { return socket; }
 	const std::string& GetUsername() const { return username; }
 	PlayerColor GetPlayerColor() const { return color;  }
+	int GetPlayerId() const { return id; }
 
 	//setters
 	void SetPlayerColor(PlayerColor c) { color = c; }

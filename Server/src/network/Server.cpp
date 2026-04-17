@@ -413,7 +413,9 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
                 }
 
                 //Borramos room
-                _rooms.erase(_rooms.begin() + i);
+                //_rooms.erase(_rooms.begin() + i);
+
+                sf::Packet playerGameResponsePacket;
             }
 
             return;
@@ -421,6 +423,9 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
     }
 }
 
+
+
+// ------------------------------------------------------TAMO POR AQUI
 void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players)
 {
     sf::Packet packet;

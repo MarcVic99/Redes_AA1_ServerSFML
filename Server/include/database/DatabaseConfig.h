@@ -4,5 +4,5 @@
 
 #define USERNAME "root"
 #define PASSWORD ""
-#define PASSWORD "enti"
+//#define PASSWORD "enti"
 #define DATABASE "3raya"

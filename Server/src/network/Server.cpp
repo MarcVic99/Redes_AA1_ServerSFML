@@ -135,6 +135,19 @@ void Server::HandleClientMessages()
                     JoinRoom(clients[i], roomId, username);
                     break;
                 }
+                case tipoPaquete::PLAYERS_GAME_REQUEST:
+                {
+                    GameSession* session = GetSessionByClient(clients[i]);
+
+                    if (session == nullptr)
+                    {
+                        std::cout << "Session not found for client" << std::endl;
+                        break;
+                    }
+
+                    SendPlayers(clients[i], session->GetPlayers());
+                    break;
+                }
 
                 default:
                     break;
@@ -400,11 +413,36 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
             return;
         }
     }
+}
 
-    // sala no encontrada
+void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players)
+{
     sf::Packet packet;
-    packet << tipoPaquete::JOIN_ROOM_ERROR;
+
+    packet << tipoPaquete::PLAYERS_GAME_RESPONSE;
+
+    // número de jugadores
+    packet << static_cast<int>(players.size());
+
+    // enviar username + color
+    for (const auto& player : players)
+    {
+        packet << player.GetUsername();
+        
+        packet << static_cast<int>(player.GetPlayerColor());
+    }
+
     client->send(packet);
+}
+
+GameSession* Server::GetSessionByClient(sf::TcpSocket* client)
+{
+    for (auto& session : _sessions)
+    {
+        if (session.HasPlayer(client))
+            return &session;
+    }
+    return nullptr;
 }
 
 

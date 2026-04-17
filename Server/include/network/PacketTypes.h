@@ -22,7 +22,9 @@ enum class tipoPaquete {
     JOIN_ROOM_OK,
     JOIN_ROOM_ERROR,
 
-    START_GAME
+    START_GAME,
+    PLAYERS_GAME_REQUEST,
+    PLAYERS_GAME_RESPONSE
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

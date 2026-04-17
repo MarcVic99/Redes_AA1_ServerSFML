@@ -7,11 +7,45 @@ GameSession::GameSession(const std::string& id, const std::vector<Player>& playe
     finished(false)
 {
     isSpectator.resize(players.size(), false);
+
+    AssignColors();
 }
 
 bool GameSession::IsPlayerTurn(sf::TcpSocket* socket) const
 {
     return players[currentTurnIndex].GetSocket() == socket;
+}
+
+bool GameSession::HasPlayer(sf::TcpSocket* socket) const
+{
+    for (const auto& player : players)
+    {
+        if (player.GetSocket() == socket)
+            return true;
+    }
+    return false;
+}
+
+//random de los colores
+void GameSession::AssignColors()
+{
+    std::vector<PlayerColor> colors =
+    {
+        PlayerColor::Rojo,
+        PlayerColor::Naranja,
+        PlayerColor::Verde,
+        PlayerColor::Azul
+    };
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::shuffle(colors.begin(), colors.end(), g);
+
+    for (int i = 0; i < players.size(); i++)
+    {
+        players[i].SetPlayerColor(colors[i]);
+    }
 }
 
 

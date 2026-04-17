@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <random>
+
 #include "network/Player.h"
 #include "game/GameBoard.h"
 
@@ -31,4 +33,8 @@ public:
     bool IsFinished() const { return finished; }
     const GameBoard& GetBoard() const { return board; };
     const std::vector<Player> GetPlayers() const { return players; };
+
+    bool HasPlayer(sf::TcpSocket* socket) const;
+
+    void AssignColors();
 };

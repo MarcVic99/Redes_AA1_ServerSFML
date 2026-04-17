@@ -230,6 +230,8 @@ void Server::HandleLogin(sf::TcpSocket& client, sf::Packet packet)
     {
         return;
     }
+
+    SendPlayerInfo(client, user);
    
 }
 
@@ -258,6 +260,8 @@ void Server::HandleRegister(sf::TcpSocket& client, sf::Packet packet)
     {
         return;
     }
+
+    SendPlayerInfo(client, user);
 }
 
 
@@ -433,6 +437,25 @@ void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& play
     }
 
     client->send(packet);
+}
+
+void Server::SendPlayerInfo(sf::TcpSocket& client, std::string username)
+{
+    PlayerData data = databaseManager.GetPlayerbyName(username);
+
+    if (data.user.empty())
+    {
+        std::cout << "Error: user not found in DB\n";
+        return;
+    }
+
+    sf::Packet packet;
+
+    packet << tipoPaquete::USER_INFO;
+    packet << data.id;
+    packet << data.user;
+
+    SendPacket(client, packet, "user_info");
 }
 
 GameSession* Server::GetSessionByClient(sf::TcpSocket* client)

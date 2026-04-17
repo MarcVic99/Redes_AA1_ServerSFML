@@ -215,6 +215,39 @@ PlayerData DatabaseManager::GetPlayerbyID(int id)
 	return data;
 }
 
+PlayerData DatabaseManager::GetPlayerbyName(const std::string& name)
+{
+	PlayerData data;
+
+	if (con == nullptr)
+		return data;
+
+	try
+	{
+		sql::PreparedStatement* stmt = con->prepareStatement(
+			"SELECT id, user FROM users WHERE user = ?"
+		);
+
+		stmt->setString(1, name);
+		sql::ResultSet* res = stmt->executeQuery();
+
+		if (res->next())
+		{
+			data.user = res->getString("user");
+			data.id = res->getInt("id"); 
+		}
+
+		delete res;
+		delete stmt;
+	}
+	catch (sql::SQLException e)
+	{
+		std::cout << "Error GetPlayerByName: " << e.what() << std::endl;
+	}
+
+	return data;
+}
+
 int DatabaseManager::GetPlayerRank(int id)
 {
 	int rank = -1;

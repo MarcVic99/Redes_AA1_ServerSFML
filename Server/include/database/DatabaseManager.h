@@ -14,6 +14,7 @@
 
 struct PlayerData
 {
+	int id;
 	std::string user;
 	int puntuacion_total;
 };
@@ -39,6 +40,7 @@ public:
 
 	//Getters
 	PlayerData GetPlayerbyID(int id);
+	PlayerData GetPlayerbyName(const std::string& name);
 	int GetPlayerRank(int id);
 
 private:

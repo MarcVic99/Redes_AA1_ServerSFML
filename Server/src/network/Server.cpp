@@ -181,7 +181,8 @@ void Server::HandleClientMessages()
                         }
                         break;
                     }
-                        
+                    
+                    CheckFinish(session->GetPlayers(), session->finished);
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
 
@@ -562,14 +563,17 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
     }
 }
 
-void Server::CheckFinish(sf::TcpSocket* socket, bool _finished)
+void Server::CheckFinish(std::vector<sf::TcpSocket*> socket, bool _finished)
 {
     sf::Packet packetFinished;
     tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
 
     packetFinished << tipo;
 
-    SendPacket(socket, packetFinished, "game_finished");
+    for (const auto& player : socket)
+    {
+        SendPacket(player, packetFinished, "game_finished");
+    }
 }
 
 

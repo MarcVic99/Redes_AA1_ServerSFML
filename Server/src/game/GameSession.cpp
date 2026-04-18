@@ -57,6 +57,11 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
     if (!IsPlayerTurn(socket))
         return false;
 
+    if (isSpectator[currentTurnIndex]) {
+        std::cout << "Player " << players[currentTurnIndex].GetUsername() << "Already won." << std::endl;
+        AdvanceTurn();
+    }
+
     std::cout << "Making move" << std::endl;
 
     int playerIndex = currentTurnIndex;
@@ -68,7 +73,7 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
         return false;
 
     // comprobar victoria
-    if (board.CheckWin(cell))
+    if (board.CheckWin(row, col, cell))
     {
         winners.push_back(players[playerIndex].GetUsername());
         isSpectator[playerIndex] = true;

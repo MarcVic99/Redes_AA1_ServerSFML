@@ -563,16 +563,22 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
     }
 }
 
-void Server::CheckFinish(std::vector<sf::TcpSocket*> socket, bool _finished)
+void Server::CheckFinish(std::vector<Player> players, bool _finished)
 {
-    sf::Packet packetFinished;
-    tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
-
-    packetFinished << tipo;
-
-    for (const auto& player : socket)
+    if (_finished)
     {
-        SendPacket(player, packetFinished, "game_finished");
+        sf::Packet packetFinished;
+        tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
+
+        packetFinished << tipo;
+
+        for (const auto& player : players)
+        {
+            SendPacket(player.GetSocket(), packetFinished, "game_finished");
+        }
+    }
+    else {
+        std::cout << "No ha terminado todavia" << std::endl;
     }
 }
 

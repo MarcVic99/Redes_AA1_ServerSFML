@@ -49,7 +49,7 @@ private:
 
 	void SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players);
 
-	void CheckFinish(std::vector<sf::TcpSocket*> socket, bool _finished);
+	void CheckFinish(std::vector<Player> player, bool _finished);
 
 	void BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column);
 

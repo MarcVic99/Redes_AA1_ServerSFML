@@ -7,6 +7,7 @@ GameSession::GameSession(const std::string& id, const std::vector<Player>& playe
     finished(false)
 {
     isSpectator.resize(players.size(), false);
+    loosers = players;
 
     AssignColors();
 }
@@ -76,6 +77,7 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
     if (board.CheckWin(row, col, cell))
     {
         winners.push_back(players[playerIndex].GetUsername());
+		loosers.erase(loosers.begin() + playerIndex);
         isSpectator[playerIndex] = true;
 
         if (winners.size() >= 3)

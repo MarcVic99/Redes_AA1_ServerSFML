@@ -489,7 +489,6 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
 
 
 
-// ------------------------------------------------------TAMO POR AQUI
 void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players)
 {
     sf::Packet packet;

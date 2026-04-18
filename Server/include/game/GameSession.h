@@ -12,6 +12,7 @@ private:
     std::string roomId;
 
     std::vector<Player> players;
+    std::vector<Player> loosers;
     std::vector<bool> isSpectator;
 
     GameBoard board;

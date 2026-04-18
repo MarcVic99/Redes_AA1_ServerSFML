@@ -433,8 +433,9 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
             sf::Packet packet;
             packet << tipoPaquete::JOIN_ROOM_OK << roomId;
            
-            if (SendPacket(*client, packet, "join_room_ok"))
+            if (!SendPacket(*client, packet, "join_room_ok"))
                 return;
+                
 
 
             if (room.IsFull())

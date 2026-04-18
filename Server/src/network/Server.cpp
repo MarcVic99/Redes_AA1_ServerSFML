@@ -395,6 +395,22 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std:
 void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username)
 {
     std::cout << "Trying join room: " << roomId << std::endl;
+
+    bool roomExists = false;
+    for (auto& room : _rooms) {
+        if (room.GetId() == roomId) {
+            roomExists = true;
+            break;
+        }
+    }
+    if (!roomExists) {
+        sf::Packet packet;
+        packet << tipoPaquete::JOIN_ROOM_ERROR;
+        client->send(packet);
+        std::cout << "Room id " << roomId << " doesn't exist" << std::endl;
+        return;
+    }
+
     for (int i = 0; i < _rooms.size(); i++)
     {
         Room& room = _rooms[i];
@@ -423,6 +439,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
                     return;
                 }
             }
+			
 
             room.AddPlayer(client, username);
 

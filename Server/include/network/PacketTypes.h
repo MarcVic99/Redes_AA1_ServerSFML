@@ -29,7 +29,9 @@ enum class tipoPaquete {
     USER_INFO,
     DELETE_BOARD,
     PLAYER_MOVE,
-    BROADCAST_PLAYER_MOVE
+    BROADCAST_PLAYER_MOVE,
+    
+    GAME_FINISHED
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

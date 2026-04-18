@@ -37,8 +37,7 @@ private:
 	void HandleGetRanking(sf::TcpSocket& client, sf::Packet packet);
 
 
-	bool SendPacket(sf::TcpSocket& socket,sf::Packet& packet, const std::string& context);
-
+	bool SendPacket(sf::TcpSocket* socket, sf::Packet& packet, const std::string& context);
 
 	void RemoveClient(std::size_t index);
 
@@ -50,6 +49,7 @@ private:
 
 	void SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players);
 
+	void CheckFinish(sf::TcpSocket* socket, bool _finished);
 
 	void BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column);
 

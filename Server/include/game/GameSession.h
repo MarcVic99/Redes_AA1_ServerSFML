@@ -5,6 +5,7 @@
 
 #include "network/Player.h"
 #include "game/GameBoard.h"
+#include "network/PacketTypes.h"
 
 class GameSession
 {

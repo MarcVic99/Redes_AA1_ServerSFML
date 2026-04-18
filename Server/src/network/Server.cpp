@@ -241,7 +241,7 @@ void Server::HandleHandshake(sf::TcpSocket& client, sf::Packet& packet)
     }
 
     //Enviamos paquete de handshake o error
-    if (!SendPacket(client, response, "handsahake"))
+    if (!SendPacket(&client, response, "handsahake"))
     {
         return;
     }
@@ -266,7 +266,7 @@ void Server::HandleLogin(sf::TcpSocket& client, sf::Packet packet)
         response << tipoPaquete::LOGIN_ERROR << std::string("LOGIN_ERROR");
     }
     //Enviamos paquete de login o error
-    if (!SendPacket(client, response, "login"))
+    if (!SendPacket(&client, response, "login"))
     {
         return;
     }
@@ -296,7 +296,7 @@ void Server::HandleRegister(sf::TcpSocket& client, sf::Packet packet)
     }
 
     //Enviamos paquete de register o error
-    if (!SendPacket(client, response, "register"))
+    if (!SendPacket(&client, response, "register"))
     {
         return;
     }
@@ -343,7 +343,7 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet packet)
 	response << currentUserData.victorias;
 	response << currentUserData.derrotas;
 
-    if (!SendPacket(client, response, "getRegister"))
+    if (!SendPacket(&client, response, "getRegister"))
     {
         return;
     }
@@ -351,9 +351,9 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet packet)
 }
 
 
-bool Server::SendPacket(sf::TcpSocket& socket, sf::Packet& packet, const std::string& context)
+bool Server::SendPacket(sf::TcpSocket* socket, sf::Packet& packet, const std::string& context)
 {
-    if (socket.send(packet) != sf::Socket::Status::Done)
+    if (socket->send(packet) != sf::Socket::Status::Done)
     {
         std::cerr << "Error al enviar " << context << std::endl;
         return false;
@@ -524,7 +524,7 @@ void Server::SendPlayerInfo(sf::TcpSocket& client, std::string username)
 
     std::cout << "Sending player info to client: ID=" << data.id << " Username='" << data.user << "' size=" << data.user.size() << std::endl;
 
-    SendPacket(client, packet, "user_info");
+    SendPacket(&client, packet, "user_info");
 }
 
 GameSession* Server::GetSessionByClient(sf::TcpSocket* client)
@@ -560,6 +560,16 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
 
 		std::cout << "Broadcasting move to player " << player.GetUsername() << ": cell=" << static_cast<int>(cell) << " row=" << row << " column=" << column << std::endl;
     }
+}
+
+void Server::CheckFinish(sf::TcpSocket* socket, bool _finished)
+{
+    sf::Packet packetFinished;
+    tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
+
+    packetFinished << tipo;
+
+    SendPacket(socket, packetFinished, "game_finished");
 }
 
 

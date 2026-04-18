@@ -319,11 +319,20 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet packet)
     {
         response << cliente.user;
         response << cliente.puntuacion_total;
+        response << cliente.victorias;
+        response << cliente.derrotas;
+		std::cout << "Ranking: " << cliente.user << " Puntuacion: " << cliente.puntuacion_total << " Victorias: " << cliente.victorias << " Derrotas: " << cliente.derrotas << std::endl;
     }
+
+	PlayerData currentUserData = databaseManager.GetPlayerbyID(userID);
 
     //añadir el ranking del cliente actual
     int userRank = databaseManager.GetPlayerRank(userID);
     response << userRank;
+	response << currentUserData.user;
+	response << currentUserData.puntuacion_total;
+	response << currentUserData.victorias;
+	response << currentUserData.derrotas;
 
     if (!SendPacket(client, response, "getRegister"))
     {

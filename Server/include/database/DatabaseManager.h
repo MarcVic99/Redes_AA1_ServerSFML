@@ -17,6 +17,8 @@ struct PlayerData
 	int id;
 	std::string user;
 	int puntuacion_total;
+	int victorias;
+	int derrotas;
 };
 
 

@@ -1,5 +1,10 @@
 #include "game/GameBoard.h"
 
+GameBoard::GameBoard()
+{
+    board.assign(NUM_ROWS * NUM_COLUMNS, Cell::Empty);
+}
+
 bool GameBoard::MakeMove(Cell cell, int row, int column)
 {
 

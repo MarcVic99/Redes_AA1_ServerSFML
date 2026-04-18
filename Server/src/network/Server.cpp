@@ -162,15 +162,21 @@ void Server::HandleClientMessages()
                     }
 
                     std::int32_t row, column;
+					std::string username;
 
-                    packet >> row >> column;
+                    packet >> username >> row >> column;
 
                     Cell cell;
 
-                    if (!session->MakeMove(clients[i], row, column, cell))
+                    if (!session->MakeMove(clients[i], row, column, cell)) {
+						std::cout << "Invalid move from client " << username << ": row=" << row << " column=" << column << std::endl;
                         break;
+                    }
+                        
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
+
+					std::cout << "Player move: row=" << row << " column=" << column << " cell=" << static_cast<int>(cell) << std::endl;
                     break;
                 }
 
@@ -504,7 +510,8 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
     packet << tipoPaquete::BROADCAST_PLAYER_MOVE
         << static_cast<std::int32_t>(cell)
         << row
-        << column;
+        << column
+        << static_cast<std::int32_t>(session->GetCurrentTurnIndex());
 
     for (const auto& player : session->GetPlayers())
     {
@@ -516,6 +523,8 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
             continue;
 
         target->send(packet);
+
+		std::cout << "Broadcasting move to player " << player.GetUsername() << ": cell=" << static_cast<int>(cell) << " row=" << row << " column=" << column << std::endl;
     }
 }
 
@@ -526,6 +535,6 @@ void Server::Shutdown()
     for (sf::TcpSocket* client : clients)
     {
         delete client;
-    }
+    }   
     clients.clear();
 }

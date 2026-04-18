@@ -25,7 +25,7 @@ private:
 	int numCells = NUM_ROWS * NUM_COLUMNS;
 public:
 
-	GameBoard() {};
+	GameBoard();
 
 	bool MakeMove(Cell cell, int row, int column);
 	Cell& GetCell(int row, int column);

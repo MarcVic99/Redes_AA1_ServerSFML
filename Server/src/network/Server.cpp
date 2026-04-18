@@ -318,9 +318,9 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet packet)
     for (const auto& cliente : top10Users)
     {
         response << cliente.user;
-        response << cliente.puntuacion_total;
-        response << cliente.victorias;
-        response << cliente.derrotas;
+        response << static_cast<std::int32_t>(cliente.puntuacion_total);
+        response << static_cast<std::int32_t>(cliente.victorias);
+        response << static_cast<std::int32_t>(cliente.derrotas);
 		std::cout << "Ranking: " << cliente.user << " Puntuacion: " << cliente.puntuacion_total << " Victorias: " << cliente.victorias << " Derrotas: " << cliente.derrotas << std::endl;
     }
 

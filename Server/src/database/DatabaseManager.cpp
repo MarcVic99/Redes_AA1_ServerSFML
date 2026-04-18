@@ -52,7 +52,7 @@ bool DatabaseManager::RegisterUserDB(const std::string& name, const std::string&
 		else {
 			
 			sql::PreparedStatement* stmt = con->prepareStatement(
-				"INSERT INTO users (user, password, puntuacion_total, victorias, derrotas) VALUES ( ?, ?, 0, 0, 0)"
+				"INSERT INTO users (user, password) VALUES ( ?, ?)"
 			);
 
 			stmt->setString(1, name);
@@ -154,7 +154,7 @@ std::vector<PlayerData> DatabaseManager::GetTop10()
 	try
 	{
 		sql::PreparedStatement* stmt = con->prepareStatement(
-			"SELECT user, puntuacion_total "
+			"SELECT *"
 			"FROM users "
 			"ORDER BY puntuacion_total DESC "
 			"LIMIT 10"
@@ -166,6 +166,8 @@ std::vector<PlayerData> DatabaseManager::GetTop10()
 			PlayerData p;
 			p.user = res->getString("user");
 			p.puntuacion_total = res->getInt("puntuacion_total");
+			p.victorias = res->getInt("victorias");
+			p.derrotas = res->getInt("derrotas");
 
 			data.push_back(p);
 		}

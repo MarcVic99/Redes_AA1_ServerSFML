@@ -151,7 +151,7 @@ void Server::HandleClientMessages()
                     break;
                 }
                 case tipoPaquete::PLAYER_MOVE:
-
+                {
                     //cogemos la sesion
                     GameSession* session = GetSessionByClient(clients[i]);
 
@@ -171,9 +171,8 @@ void Server::HandleClientMessages()
                         break;
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
-
-
                     break;
+                }
 
                 default:
                     break;

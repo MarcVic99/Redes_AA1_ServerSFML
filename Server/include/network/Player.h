@@ -19,7 +19,7 @@ public:
 	PlayerColor color;
 	int id;
 
-	Player() : id(-1), socket(nullptr), username(""), color(PlayerColor::Rojo) {}
+	Player() : socket(nullptr), username("") {}
 	Player(sf::TcpSocket* socket, const std::string& username) : socket(socket), username(username)  {}
 	
 

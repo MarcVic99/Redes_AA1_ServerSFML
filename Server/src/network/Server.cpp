@@ -340,7 +340,6 @@ bool Server::SendPacket(sf::TcpSocket& socket, sf::Packet& packet, const std::st
         std::cerr << "Error al enviar " << context << std::endl;
         return false;
     }
-    
     return true;
 }
 
@@ -363,10 +362,7 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std:
         if (room.GetId() == roomId) {
             sf::Packet packet;
             packet << tipoPaquete::CREATE_ROOM_ERROR;
-
-            if (!SendPacket(*client, packet, "create_room_error"))
-                return;
-
+            client->send(packet);
             std::cout << "Room id " << roomId << " already exists" << std::endl;
             return;
 		}
@@ -383,8 +379,7 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, std:
     sf::Packet packet;
     packet << tipoPaquete::CREATE_ROOM_OK << room.GetId();
 
-    if (SendPacket(*client, packet, "create_room"))
-        return;
+    client->send(packet);
 }
 
 
@@ -404,10 +399,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
             {
                 sf::Packet packet;
                 packet << tipoPaquete::JOIN_ROOM_ERROR;
-
-                if (!SendPacket(*client, packet, "join_room_error"))
-                    return;
-
+                client->send(packet);
                 return;
             }
 
@@ -416,10 +408,8 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
                 if (player.GetSocket() == client)
                 {
                     sf::Packet packet;
-                    packet << tipoPaquete::JOIN_ROOM_ERROR;              
-                    if (!SendPacket(*client, packet, "join_room_error"))
-                        return;
-
+                    packet << tipoPaquete::JOIN_ROOM_ERROR;
+                    client->send(packet);
                     std::cout << "Client already in room " << roomId << std::endl;
                     return;
                 }
@@ -432,10 +422,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
 
             sf::Packet packet;
             packet << tipoPaquete::JOIN_ROOM_OK << roomId;
-           
-            if (SendPacket(*client, packet, "join_room_ok"))
-                return;
-
+            client->send(packet);
 
             if (room.IsFull())
             {
@@ -451,8 +438,7 @@ void Server::JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& us
 
                 for (const auto& player : room.GetPlayers())
                 {
-                    if (!SendPacket(*client, startPacket, "start_game"))
-                        return;
+                    player.GetSocket()->send(startPacket);
                 }
 
                 //Borramos room
@@ -486,9 +472,7 @@ void Server::SendPlayers(sf::TcpSocket* client, const std::vector <Player>& play
         packet << static_cast<std::int32_t>(player.GetPlayerColor());
     }
 
-    if (!SendPacket(*client, packet, "players_game_response"))
-        return;
-
+    client->send(packet);
 }
 
 void Server::SendPlayerInfo(sf::TcpSocket& client, std::string username)
@@ -506,8 +490,7 @@ void Server::SendPlayerInfo(sf::TcpSocket& client, std::string username)
 
     std::cout << "Sending player info to client: ID=" << data.id << " Username='" << data.user << "' size=" << data.user.size() << std::endl;
 
-    if (!SendPacket(client, packet, "user_info"))
-        return;
+    SendPacket(client, packet, "user_info");
 }
 
 GameSession* Server::GetSessionByClient(sf::TcpSocket* client)
@@ -539,9 +522,7 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
         if (target == sender)
             continue;
 
-        if (!SendPacket(*target, packet, "broadcast_player_move"))
-            return;
-
+        target->send(packet);
 
 		std::cout << "Broadcasting move to player " << player.GetUsername() << ": cell=" << static_cast<int>(cell) << " row=" << row << " column=" << column << std::endl;
     }

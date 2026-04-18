@@ -150,6 +150,30 @@ void Server::HandleClientMessages()
                     SendPlayers(clients[i], session->GetPlayers());
                     break;
                 }
+                case tipoPaquete::PLAYER_MOVE:
+
+                    //cogemos la sesion
+                    GameSession* session = GetSessionByClient(clients[i]);
+
+                    if (session == nullptr)
+                    {
+                        std::cout << "Session not found for client" << std::endl;
+                        break;
+                    }
+
+                    std::int32_t row, column;
+
+                    packet >> row >> column;
+
+                    Cell cell;
+
+                    if (!session->MakeMove(clients[i], row, column, cell))
+                        break;
+
+                    BroadcastPlayerMove(session, clients[i], cell, row, column);
+
+
+                    break;
 
                 default:
                     break;
@@ -472,6 +496,28 @@ GameSession* Server::GetSessionByClient(sf::TcpSocket* client)
             return &session;
     }
     return nullptr;
+}
+
+void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column)
+{
+    sf::Packet packet;
+
+    packet << tipoPaquete::BROADCAST_PLAYER_MOVE
+        << static_cast<std::int32_t>(cell)
+        << row
+        << column;
+
+    for (const auto& player : session->GetPlayers())
+    {
+        sf::TcpSocket* target = player.GetSocket();
+
+        //no reenviamos al jugador 
+        //(le saltará error al comprobar que esa casilla esta ocupada)
+        if (target == sender)
+            continue;
+
+        target->send(packet);
+    }
 }
 
 

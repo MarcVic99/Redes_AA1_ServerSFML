@@ -50,6 +50,9 @@ private:
 
 	void SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players);
 
+
+	void BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column);
+
 	GameSession* GetSessionByClient(sf::TcpSocket* client);
 	
 	void Shutdown();

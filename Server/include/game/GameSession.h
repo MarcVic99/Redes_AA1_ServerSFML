@@ -24,7 +24,7 @@ private:
 public:
     GameSession(const std::string& id, const std::vector<Player>& players);
 
-    bool MakeMove(sf::TcpSocket* socket, int row, int col);
+    bool MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell);
 
     void AdvanceTurn();
 

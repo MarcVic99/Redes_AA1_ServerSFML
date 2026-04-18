@@ -49,7 +49,7 @@ void GameSession::AssignColors()
 }
 
 
-bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col)
+bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
 {
     if (finished)
         return false;
@@ -57,10 +57,12 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col)
     if (!IsPlayerTurn(socket))
         return false;
 
+    std::cout << "Making move" << std::endl;
+
     int playerIndex = currentTurnIndex;
 
     // mapear jugador -> ficha
-    Cell cell = static_cast<Cell>(playerIndex + 1);
+    cell = static_cast<Cell>(playerIndex + 1);
 
     if (!board.MakeMove(cell, row, col))
         return false;

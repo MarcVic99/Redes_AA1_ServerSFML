@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "network/Player.h"
 
 #define NUM_ROWS 6
@@ -26,7 +28,7 @@ public:
 	GameBoard() {};
 
 	bool MakeMove(Cell cell, int row, int column);
-	Cell GetCell(int row, int column) const;
+	Cell& GetCell(int row, int column);
 
 	bool CheckWin(Cell cell);
 	void Reset();

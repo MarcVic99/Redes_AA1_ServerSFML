@@ -170,6 +170,15 @@ void Server::HandleClientMessages()
 
                     if (!session->MakeMove(clients[i], row, column, cell)) {
 						std::cout << "Invalid move from client " << username << ": row=" << row << " column=" << column << std::endl;
+                        if (session->GetIsFinished()) {
+                            std::vector<std::string> winners = session->GetWinners();
+
+                            std::cout << "Game finished. Winners: ";
+                            for (const auto& winner : winners) {
+                                std::cout << winner << " ";
+                            }
+                            std::cout << std::endl;
+                        }
                         break;
                     }
                         

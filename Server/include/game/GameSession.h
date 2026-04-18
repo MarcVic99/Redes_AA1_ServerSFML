@@ -34,6 +34,8 @@ public:
     const GameBoard& GetBoard() const { return board; };
     const std::vector<Player> GetPlayers() const { return players; };
 	int GetCurrentTurnIndex() const { return currentTurnIndex; }
+	bool GetIsFinished() const { return finished; } 
+	std::vector<std::string> GetWinners() const { return winners; }
 
     bool HasPlayer(sf::TcpSocket* socket) const;
 

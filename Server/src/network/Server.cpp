@@ -590,7 +590,10 @@ void Server::BroadcastSkipTurnTimeout(GameSession* session)
     }
 }
 
-void Server::CheckFinish(std::vector<Player> players,std::vector<Player> winners, std::vector<Player> losers, bool finished)
+void Server::CheckFinish(std::vector<Player> players,
+                         std::vector<Player> winners,
+                         std::vector<Player> losers,
+                         bool finished)
 {
     if (finished)
     {
@@ -599,29 +602,28 @@ void Server::CheckFinish(std::vector<Player> players,std::vector<Player> winners
 
         packetFinished << tipo;
 
-        //añadir cada jugador con su puntuacion
+        std::int32_t totalPlayers = static_cast<std::int32_t>(winners.size() + losers.size());
+        packetFinished << totalPlayers;
 
         int indice = 0;
 
         for (const Player& winner : winners)
         {
             packetFinished << winner.GetUsername();
-
-            packetFinished << POINTS[indice];
-
+            packetFinished << static_cast<std::int32_t>(POINTS[indice]);
             indice++;
         }
 
         for (const Player& loser : losers)
         {
             packetFinished << loser.GetUsername();
-
-            packetFinished << LOSERPOINTS;
+            packetFinished << static_cast<std::int32_t>(LOSERPOINTS);
         }
 
         for (const auto& player : players)
-        SendPacket(player.GetSocket(), packetFinished, "game_finished");
-
+        {
+            SendPacket(player.GetSocket(), packetFinished, "game_finished");
+        }
     }
     else
     {

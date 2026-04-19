@@ -30,6 +30,7 @@ enum class tipoPaquete {
     DELETE_BOARD,
     PLAYER_MOVE,
     BROADCAST_PLAYER_MOVE,
+    SKIP_TURN,
     
     GAME_FINISHED
 };

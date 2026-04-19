@@ -27,18 +27,30 @@ int Server::run()
 
     while (!serverClosed)
     {
-        if (selector.wait())
+        if (selector.wait(sf::milliseconds(50)))
         {
             if (selector.isReady(listener))
             {
                 HandleNewConnection();
             }
-            else
+
+            HandleClientMessages();
+        }
+
+
+        //Salta turno del jugador -> notificamos al player
+        for (auto& session : _sessions)
+        {
+            if (session.UpdateTurnTimeout())
             {
-                HandleClientMessages();
+                std::cout << "Turno saltado por timeout en room: "
+                    << session.GetRoomId() << std::endl;
+
+                BroadcastSkipTurnTimeout(&session);
             }
         }
     }
+
     databaseManager.disconnectDB();
     Shutdown();
     return 0;
@@ -168,7 +180,7 @@ void Server::HandleClientMessages()
 
                     Cell cell;
 
-                    if (!session->MakeMove(clients[i], row, column, cell)) {
+                    if (!session->SessionMakeMove(clients[i], row, column, cell)) {
 						std::cout << "Invalid move from client " << username << ": row=" << row << " column=" << column << std::endl;
                         if (session->GetIsFinished()) {
                             std::vector<std::string> winners = session->GetWinners();
@@ -182,7 +194,7 @@ void Server::HandleClientMessages()
                         break;
                     }
                     
-                    CheckFinish(session->GetPlayers(), session->finished);
+                    CheckFinish(session->GetPlayers(), session->GetIsFinished());
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
 
@@ -563,6 +575,18 @@ void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Ce
         SendPacket(target, packet, "broadcast_player_move");
 
 		std::cout << "Broadcasting move to player " << player.GetUsername() << ": cell=" << static_cast<int>(cell) << " row=" << row << " column=" << column << std::endl;
+    }
+}
+
+void Server::BroadcastSkipTurnTimeout(GameSession* session)
+{
+    sf::Packet packet;
+
+    packet << tipoPaquete::SKIP_TURN << static_cast<int32_t>(session->GetCurrentTurnIndex());
+
+    for (const auto& player : session->GetPlayers())
+    {
+        SendPacket(player.GetSocket(), packet, "turn_timeout");
     }
 }
 

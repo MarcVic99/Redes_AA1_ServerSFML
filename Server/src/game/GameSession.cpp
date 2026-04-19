@@ -10,6 +10,7 @@ GameSession::GameSession(const std::string& id, const std::vector<Player>& playe
     loosers = players;
 
     AssignColors();
+    turnClock.restart();
 }
 
 bool GameSession::IsPlayerTurn(sf::TcpSocket* socket) const
@@ -50,7 +51,7 @@ void GameSession::AssignColors()
 }
 
 
-bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
+bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
 {
     if (finished)
         return false;
@@ -61,6 +62,7 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
     if (isSpectator[currentTurnIndex]) {
         std::cout << "Player " << players[currentTurnIndex].GetUsername() << "Already won." << std::endl;
         AdvanceTurn();
+        RestartTurnClock();
     }
 
     std::cout << "Making move" << std::endl;
@@ -89,6 +91,7 @@ bool GameSession::MakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
     }
 
     AdvanceTurn();
+    RestartTurnClock();
 
     return true;
 }
@@ -106,3 +109,32 @@ void GameSession::AdvanceTurn()
     }
 }
 
+
+
+//Temporizador funciones
+void GameSession::RestartTurnClock()
+{
+    turnClock.restart();
+}
+
+bool GameSession::HasTurnTimedOut() const
+{
+    return turnClock.getElapsedTime().asSeconds() >= TURN_LIMIT_SECONDS;
+}
+
+bool GameSession::UpdateTurnTimeout()
+{
+    if (finished)
+        return false;
+
+    if (!HasTurnTimedOut())
+        return false;
+
+    std::cout << "Turno agotado para jugador: "
+        << players[currentTurnIndex].GetUsername() << std::endl;
+
+    AdvanceTurn();
+    RestartTurnClock();
+
+    return true;
+}

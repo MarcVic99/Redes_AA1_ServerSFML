@@ -52,6 +52,8 @@ private:
 	void CheckFinish(std::vector<Player> player, bool _finished);
 
 	void BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column);
+	void BroadcastSkipTurnTimeout(GameSession* session);	
+	
 
 	GameSession* GetSessionByClient(sf::TcpSocket* client);
 	

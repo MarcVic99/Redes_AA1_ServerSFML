@@ -49,6 +49,7 @@ private:
 	sql::Driver* driver;
 	sql::Connection* con;
 
+
 	std::string HashPassword(const std::string& password);
 	bool VerifyPassword(const std::string& password, const std::string storeHash);
 };

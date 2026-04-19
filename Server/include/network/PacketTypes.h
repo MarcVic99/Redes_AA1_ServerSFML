@@ -14,6 +14,7 @@ enum class tipoPaquete {
     REGISTER_ERROR,
     GET_RANKING,
     RECEIVE_RANKING,
+    RESUME_RESPONSE,
 
     CREATE_ROOM,
     CREATE_ROOM_OK,

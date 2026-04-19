@@ -183,18 +183,18 @@ void Server::HandleClientMessages()
                     if (!session->SessionMakeMove(clients[i], row, column, cell)) {
 						std::cout << "Invalid move from client " << username << ": row=" << row << " column=" << column << std::endl;
                         if (session->GetIsFinished()) {
-                            std::vector<std::string> winners = session->GetWinners();
+                            std::vector<Player> winners = session->GetWinners();
 
                             std::cout << "Game finished. Winners: ";
                             for (const auto& winner : winners) {
-                                std::cout << winner << " ";
+                                std::cout << winner.GetUsername() << " ";
                             }
                             std::cout << std::endl;
                         }
                         break;
                     }
                     
-                    CheckFinish(session->GetPlayers(), session->GetIsFinished(), session->GetIsDraw());
+                    CheckFinish(session->GetPlayers(), session->GetWinners(), session->GetLosers(), session->GetIsFinished());
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
 
@@ -590,20 +590,38 @@ void Server::BroadcastSkipTurnTimeout(GameSession* session)
     }
 }
 
-void Server::CheckFinish(std::vector<Player> players, bool finished, bool isDraw)
+void Server::CheckFinish(std::vector<Player> players,std::vector<Player> winners, std::vector<Player> losers, bool finished)
 {
     if (finished)
     {
         sf::Packet packetFinished;
         tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
 
-        packetFinished << tipo
-            << static_cast<std::int32_t>(isDraw);
+        packetFinished << tipo;
+
+        //añadir cada jugador con su puntuacion
+
+        int indice = 0;
+
+        for (const Player& winner : winners)
+        {
+            packetFinished << winner.GetUsername();
+
+            packetFinished << POINTS[indice];
+
+            indice++;
+        }
+
+        for (const Player& loser : losers)
+        {
+            packetFinished << loser.GetUsername();
+
+            packetFinished << LOSERPOINTS;
+        }
 
         for (const auto& player : players)
-        {
-            SendPacket(player.GetSocket(), packetFinished, "game_finished");
-        }
+        SendPacket(player.GetSocket(), packetFinished, "game_finished");
+
     }
     else
     {

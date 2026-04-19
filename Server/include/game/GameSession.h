@@ -14,13 +14,13 @@ private:
     std::string roomId;
 
     std::vector<Player> players;
-    std::vector<Player> loosers;
+    std::vector<Player> winners;
+    std::vector<Player> losers;
     std::vector<bool> isSpectator;
 
     GameBoard board;
 
     int currentTurnIndex;
-    std::vector<std::string> winners;
 
     sf::Clock turnClock;
     
@@ -45,9 +45,11 @@ public:
     bool IsFinished() const { return finished; }
     const GameBoard& GetBoard() const { return board; };
     const std::vector<Player> GetPlayers() const { return players; };
+    const std::vector<Player> GetWinners() const { return winners; };
+    const std::vector<Player> GetLosers() const { return losers; };
+
 	int GetCurrentTurnIndex() const { return currentTurnIndex; }
 	bool GetIsFinished() const { return finished; } 
-	std::vector<std::string> GetWinners() const { return winners; }
     const std::string& GetRoomId() const { return roomId; }
     bool GetIsDraw() const { return draw; }
 

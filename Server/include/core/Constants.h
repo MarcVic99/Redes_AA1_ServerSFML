@@ -12,4 +12,12 @@ constexpr float TURN_LIMIT_SECONDS = 20.f;
 static const int FIRSTWINNERPOINTS = 400;
 static const int SECONDWINNERPOINTS = 100;
 static const int THIRDWINNERPOINTS = 50;
-static const int FOURTHWINNERPOINTS = -500;
+static const int LOSERPOINTS = -500;
+
+static const int POINTS[]{
+	FIRSTWINNERPOINTS,
+	SECONDWINNERPOINTS,
+	THIRDWINNERPOINTS,
+};
+
+

@@ -6,6 +6,8 @@
 #include <iostream>
 #include "PacketTypes.h"
 #include "database/DatabaseManager.h"
+#include "Room.h"
+#include "game/GameSession.h"
 
 class Server
 {
@@ -22,20 +24,38 @@ private:
 
 	DatabaseManager databaseManager;
 
-	bool initializeListener();
-	void handleNewConnection();
+	std::vector<Room> _rooms;
+	std::vector<GameSession> _sessions;
 
-	void handleClientMessages();
-	void handleHandshake(sf::TcpSocket& client, sf::Packet& packet);
-	void handleLogin(sf::TcpSocket& client, sf::Packet packet);
-	void handleRegister(sf::TcpSocket& client, sf::Packet packet);
+	bool InitializeListener();
+	void HandleNewConnection();
+
+	void HandleClientMessages();
+	void HandleHandshake(sf::TcpSocket& client, sf::Packet& packet);
+	void HandleLogin(sf::TcpSocket& client, sf::Packet packet);
+	void HandleRegister(sf::TcpSocket& client, sf::Packet packet);
+	void HandleGetRanking(sf::TcpSocket& client, sf::Packet packet);
 
 
-	bool sendPacket(sf::TcpSocket& socket,sf::Packet& packet, const std::string& context);
+	bool SendPacket(sf::TcpSocket* socket, sf::Packet& packet, const std::string& context);
 
+	void RemoveClient(std::size_t index);
 
-	void removeClient(std::size_t index);
+	void CreateRoom(sf::TcpSocket* client, const std::string& username, std::string roomId);
+	void JoinRoom(sf::TcpSocket* client, std::string roomId, std::string& username);
+
+	//enviar al jugador su propia información para que se reconozca
+	void SendPlayerInfo(sf::TcpSocket& client, std::string username);
+
+	void SendPlayers(sf::TcpSocket* client, const std::vector <Player>& players);
+
+	void CheckFinish(const std::vector<Player>& players, const std::vector<Player>& winners, const std::vector<Player>& losers, bool finished);
+
+	void BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column);
+	void BroadcastSkipTurnTimeout(GameSession* session);	
 	
-	void shutdown();
 
+	GameSession* GetSessionByClient(sf::TcpSocket* client);
+	
+	void Shutdown();
 };

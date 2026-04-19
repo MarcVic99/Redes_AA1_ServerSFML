@@ -9,21 +9,51 @@
 #include <cppconn/exception.h>
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
+#include <vector>
+#include <sodium.h> // Para hash
+
+struct PlayerData
+{
+	int id;
+	std::string user;
+	int puntuacion_total;
+	int victorias;
+	int derrotas;
+};
 
 
 class DatabaseManager
 {
 public:
 
-	DatabaseManager() {};
+	DatabaseManager() { driver = nullptr; con = nullptr; };
+	~DatabaseManager() { disconnectDB(); };
 
-	bool connectDB(sql::Driver*& driver, sql::Connection*& con);
-	void disconnectDB(sql::Connection* con);
+	bool ConnectDB();
+	void disconnectDB();
 
-	bool registerUserDB(const std::string& name, const std::string& password);
 
-	bool validateLogin(const std::string& name, const std::string& password);
+	bool RegisterUserDB(const std::string& name, const std::string& password);
+	bool CheckUserInDB(const std::string& name, const std::string& password);
+	bool ValidateLogin(const std::string& name, const std::string& password);
+
+	//función coger top 10
+	std::vector <PlayerData> GetTop10();
+
+	//Getters
+	PlayerData GetPlayerbyID(int id);
+	PlayerData GetPlayerbyName(const std::string& name);
+	int GetPlayerRank(int id);
+
+	//Funciones de juego
+	bool UpdatePlayerStats(const std::string& username, int pointsToAdd, bool addVictory, bool addDefeat);
 
 private:
+	sql::Driver* driver;
+	sql::Connection* con;
+
+
+	std::string HashPassword(const std::string& password);
+	bool VerifyPassword(const std::string& password, const std::string storeHash);
 };
 

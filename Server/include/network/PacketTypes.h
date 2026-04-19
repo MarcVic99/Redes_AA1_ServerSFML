@@ -11,7 +11,28 @@ enum class tipoPaquete {
     LOGIN_ERROR,
     REGISTER,
     REGISTER_OK,
-    REGISTER_ERROR
+    REGISTER_ERROR,
+    GET_RANKING,
+    RECEIVE_RANKING,
+
+    CREATE_ROOM,
+    CREATE_ROOM_OK,
+    CREATE_ROOM_ERROR,
+    JOIN_ROOM,
+    JOIN_ROOM_OK,
+    JOIN_ROOM_ERROR,
+
+    START_GAME,
+    PLAYERS_GAME_REQUEST,
+    PLAYERS_GAME_RESPONSE,
+
+    USER_INFO,
+    DELETE_BOARD,
+    PLAYER_MOVE,
+    BROADCAST_PLAYER_MOVE,
+    SKIP_TURN,
+    
+    GAME_FINISHED
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

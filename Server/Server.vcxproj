@@ -126,9 +126,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>STATIC_CONCPP;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SODIUM_STATIC;STATIC_CONCPP;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\SFML-3.0.2\include;$(ProjectDir)include;$(SolutionDir)dependencies\mysqlConnector\include\jdbc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\SFML-3.0.2\include;$(ProjectDir)include;$(SolutionDir)dependencies\mysqlConnector\include\jdbc;$(SolutionDir)dependencies\libsodium-stable\src\libsodium\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -136,14 +136,17 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-audio.lib;sfml-network.lib;sfml-system.lib;mysqlcppconn-static.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\SFML-3.0.2\lib;$(SolutionDir)dependencies\mysqlConnector\lib64\vs14</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-audio.lib;sfml-network.lib;sfml-system.lib;mysqlcppconn-static.lib;libsodium.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\SFML-3.0.2\lib;$(SolutionDir)dependencies\mysqlConnector\lib64\vs14;$(SolutionDir)dependencies\libsodium-stable\bin\x64\Release\v143\static</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(ProjectDir)..\external\SFML\bin*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game\GameSession.cpp" />
+    <ClCompile Include="src\network\Room.cpp" />
+    <ClCompile Include="src\game\GameBoard.cpp" />
     <ClCompile Include="include\core\Constants.h" />
     <ClCompile Include="include\database\DatabaseConfig.h" />
     <ClCompile Include="include\network\Server.h">
@@ -168,7 +171,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\game\GameBoard.h" />
     <ClInclude Include="include\database\DatabaseManager.h" />
+    <ClInclude Include="include\game\GameSession.h" />
+    <ClInclude Include="include\network\Player.h" />
+    <ClInclude Include="include\network\Room.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

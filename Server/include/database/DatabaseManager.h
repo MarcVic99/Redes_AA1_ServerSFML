@@ -51,7 +51,7 @@ public:
     PlayerData GetPlayerById(int id);
 
     /** Returns the player data associated with a username. */
-    PlayerData GetPlayerByName(const std::string& username);
+    PlayerData GetPlayerbyName(const std::string& name);
 
     /** Returns the ranking position of a player. */
     int GetPlayerRank(int id);

@@ -460,13 +460,23 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId, const st
 void Server::SendPlayers(sf::TcpSocket* client, const std::vector<Player>& players)
 {
     sf::Packet packet;
+
     packet << tipoPaquete::PLAYERS_GAME_RESPONSE;
     packet << static_cast<std::int32_t>(players.size());
 
-    for (const Player& player : players)
+    for (const auto& player : players)
     {
+        PlayerData data = databaseManager.GetPlayerbyName(player.GetUsername());
+
         packet << player.GetUsername();
+        packet << static_cast<std::int32_t>(data.puntuacion_total);
         packet << static_cast<std::int32_t>(player.GetPlayerColor());
+
+        std::cout << "SendPlayers -> "
+            << player.GetUsername()
+            << " score=" << data.puntuacion_total
+            << " color=" << static_cast<int>(player.GetPlayerColor())
+            << std::endl;
     }
 
     SendPacket(client, packet, "players_game_response");
@@ -474,7 +484,7 @@ void Server::SendPlayers(sf::TcpSocket* client, const std::vector<Player>& playe
 
 void Server::SendPlayerInfo(sf::TcpSocket& client, const std::string& username)
 {
-    const PlayerData playerData = databaseManager.GetPlayerByName(username);
+    const PlayerData playerData = databaseManager.GetPlayerbyName(username);
 
     if (playerData.user.empty())
     {

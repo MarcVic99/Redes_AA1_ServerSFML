@@ -234,42 +234,40 @@ PlayerData DatabaseManager::GetPlayerById(int id)
     return playerData;
 }
 
-PlayerData DatabaseManager::GetPlayerByName(const std::string& username)
+PlayerData DatabaseManager::GetPlayerbyName(const std::string& name)
 {
-    PlayerData playerData;
+    PlayerData data;
 
     if (connection == nullptr)
-    {
-        return playerData;
-    }
+        return data;
 
     try
     {
-        sql::PreparedStatement* statement = connection->prepareStatement(
+        sql::PreparedStatement* stmt = connection->prepareStatement(
             "SELECT id, user, puntuacion_total, victorias, derrotas FROM users WHERE user = ?"
         );
 
-        statement->setString(1, username);
-        sql::ResultSet* result = statement->executeQuery();
+        stmt->setString(1, name);
+        sql::ResultSet* res = stmt->executeQuery();
 
-        if (result->next())
+        if (res->next())
         {
-            playerData.id = result->getInt("id");
-            playerData.user = result->getString("user");
-            playerData.puntuacion_total = result->getInt("puntuacion_total");
-            playerData.victorias = result->getInt("victorias");
-            playerData.derrotas = result->getInt("derrotas");
+            data.id = res->getInt("id");
+            data.user = res->getString("user");
+            data.puntuacion_total = res->getInt("puntuacion_total");
+            data.victorias = res->getInt("victorias");
+            data.derrotas = res->getInt("derrotas");
         }
 
-        delete result;
-        delete statement;
+        delete res;
+        delete stmt;
     }
-    catch (const sql::SQLException& exception)
+    catch (sql::SQLException e)
     {
-        std::cout << "Error getting user by name: " << exception.what() << std::endl;
+        std::cout << "Error GetPlayerByName: " << e.what() << std::endl;
     }
 
-    return playerData;
+    return data;
 }
 
 int DatabaseManager::GetPlayerRank(int id)

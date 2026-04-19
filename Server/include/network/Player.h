@@ -1,34 +1,54 @@
 #pragma once
-#include "SFML/Network.hpp"
+
+#include <string>
+
+#include <SFML/Network.hpp>
 
 enum PlayerColor
 {
-	Rojo,		//0
-	Naranja,	//1
-	Azul,		//2
-	Verde		//3
+    Rojo,
+    Naranja,
+    Azul,
+    Verde
 };
 
-class Player {
-
-
+class Player
+{
 public:
+    Player();
+    Player(sf::TcpSocket* socket, const std::string& username);
 
-	sf::TcpSocket* socket;
-	std::string username;
-	PlayerColor color;
-	int id;
+    /** Returns the socket associated with the player. */
+    sf::TcpSocket* GetSocket() const { return socket; }
 
-	Player() : socket(nullptr), username("") {}
-	Player(sf::TcpSocket* socket, const std::string& username) : socket(socket), username(username)  {}
-	
+    /** Returns the username associated with the player. */
+    const std::string& GetUsername() const { return username; }
 
-	//getters
-	sf::TcpSocket* GetSocket() const { return socket; }
-	const std::string& GetUsername() const { return username; }
-	PlayerColor GetPlayerColor() const { return color;  }
-	int GetPlayerId() const { return id; }
+    /** Returns the color assigned to the player in the match. */
+    PlayerColor GetPlayerColor() const { return color; }
 
-	//setters
-	void SetPlayerColor(PlayerColor c) { color = c; }
+    /** Returns the identifier of the player. */
+    int GetPlayerId() const { return id; }
+
+    /** Assigns a color to the player. */
+    void SetPlayerColor(PlayerColor newColor) { color = newColor; }
+
+    /** Assigns an identifier to the player. */
+    void SetPlayerId(int newId) { id = newId; }
+
+private:
+    sf::TcpSocket* socket;
+    std::string username;
+    PlayerColor color;
+    int id;
 };
+
+inline Player::Player()
+    : socket(nullptr), username(""), color(PlayerColor::Rojo), id(-1)
+{
+}
+
+inline Player::Player(sf::TcpSocket* socketValue, const std::string& usernameValue)
+    : socket(socketValue), username(usernameValue), color(PlayerColor::Rojo), id(-1)
+{
+}

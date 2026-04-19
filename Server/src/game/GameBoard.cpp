@@ -1,80 +1,100 @@
 #include "game/GameBoard.h"
 
+#include <iostream>
+
 GameBoard::GameBoard()
 {
-    board.assign(NUM_ROWS * NUM_COLUMNS, Cell::Empty);
+    Reset();
 }
 
 bool GameBoard::MakeMove(Cell cell, int row, int column)
 {
+    if (!IsInsideBoard(row, column))
+    {
+        std::cout << "Invalid cell. Coordinates are outside the board" << std::endl;
+        return false;
+    }
 
     if (GetCell(row, column) != Cell::Empty)
     {
-        std::cout << "Invalid Cell. Cell is not Empty" << std::endl;
+        std::cout << "Invalid cell. Cell is not empty" << std::endl;
         return false;
     }
 
     GetCell(row, column) = cell;
     return true;
-
 }
-int GameBoard::CountDirection(int row, int col, int dRow, int dCol, Cell cell) {
+
+Cell& GameBoard::GetCell(int row, int column)
+{
+    return board[static_cast<std::size_t>(row * kBoardColumns + column)];
+}
+
+const Cell& GameBoard::GetCell(int row, int column) const
+{
+    return board[static_cast<std::size_t>(row * kBoardColumns + column)];
+}
+
+int GameBoard::CountDirection(int row, int column, int deltaRow, int deltaColumn, Cell cell) const
+{
     int count = 0;
+    int currentRow = row + deltaRow;
+    int currentColumn = column + deltaColumn;
 
-    int r = row + dRow;
-    int c = col + dCol;
-
-    while (r >= 0 && r < NUM_ROWS && c >= 0 && c < NUM_COLUMNS &&
-        GetCell(r, c) == cell) {
-        count++;
-        r += dRow;
-        c += dCol;
+    while (IsInsideBoard(currentRow, currentColumn) && GetCell(currentRow, currentColumn) == cell)
+    {
+        ++count;
+        currentRow += deltaRow;
+        currentColumn += deltaColumn;
     }
 
     return count;
 }
-Cell& GameBoard::GetCell(int row, int column)
+
+bool GameBoard::CheckWin(int row, int column, Cell cell) const
 {
-	return board[row * NUM_COLUMNS + column];
-
-}
-
-bool GameBoard::CheckWin(int row, int col, Cell cell) {
-    // Horizontal
-    if (1 + CountDirection(row, col, 0, 1, cell)
-        + CountDirection(row, col, 0, -1, cell) >= 3)
+    if (1 + CountDirection(row, column, 0, 1, cell) + CountDirection(row, column, 0, -1, cell) >= kWinningLineLength)
+    {
         return true;
+    }
 
-    // Vertical
-    if (1 + CountDirection(row, col, 1, 0, cell)
-        + CountDirection(row, col, -1, 0, cell) >= 3)
+    if (1 + CountDirection(row, column, 1, 0, cell) + CountDirection(row, column, -1, 0, cell) >= kWinningLineLength)
+    {
         return true;
+    }
 
-    // Diagonal derecha
-    if (1 + CountDirection(row, col, 1, 1, cell)
-        + CountDirection(row, col, -1, -1, cell) >= 3)
+    if (1 + CountDirection(row, column, 1, 1, cell) + CountDirection(row, column, -1, -1, cell) >= kWinningLineLength)
+    {
         return true;
+    }
 
-    // Diagonal izquierda
-    if (1 + CountDirection(row, col, 1, -1, cell)
-        + CountDirection(row, col, -1, 1, cell) >= 3)
+    if (1 + CountDirection(row, column, 1, -1, cell) + CountDirection(row, column, -1, 1, cell) >= kWinningLineLength)
+    {
         return true;
+    }
 
     return false;
 }
 
 bool GameBoard::CheckDraw() const
 {
-    for (const auto& cell : board)
+    for (const Cell cell : board)
     {
-        if (cell == Empty)
+        if (cell == Cell::Empty)
         {
             return false;
         }
     }
+
     return true;
 }
 
 void GameBoard::Reset()
 {
+    board.assign(static_cast<std::size_t>(kBoardRows * kBoardColumns), Cell::Empty);
+}
+
+bool GameBoard::IsInsideBoard(int row, int column) const
+{
+    return row >= 0 && row < kBoardRows && column >= 0 && column < kBoardColumns;
 }

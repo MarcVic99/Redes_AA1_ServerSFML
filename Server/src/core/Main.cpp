@@ -2,7 +2,6 @@
 
 int main()
 {
-	Server server;
-	return server.run();
-
+    Server server;
+    return server.Run();
 }

@@ -3,57 +3,69 @@
 #include "DatabaseConfig.h"
 
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "mysql_connection.h"
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
-#include <vector>
-#include <sodium.h> // Para hash
+#include <cppconn/statement.h>
+#include <sodium.h>
 
 struct PlayerData
 {
-	int id;
-	std::string user;
-	int puntuacion_total;
-	int victorias;
-	int derrotas;
+    int id = -1;
+    std::string user;
+    int puntuacion_total = 0;
+    int victorias = 0;
+    int derrotas = 0;
 };
-
 
 class DatabaseManager
 {
 public:
+    DatabaseManager();
+    ~DatabaseManager();
 
-	DatabaseManager() { driver = nullptr; con = nullptr; };
-	~DatabaseManager() { disconnectDB(); };
+    /** Opens the database connection used by the server. */
+    bool Connect();
 
-	bool ConnectDB();
-	void disconnectDB();
+    /** Closes the database connection if it is open. */
+    void Disconnect();
 
+    /** Registers a new user in the database. */
+    bool RegisterUser(const std::string& username, const std::string& password);
 
-	bool RegisterUserDB(const std::string& name, const std::string& password);
-	bool CheckUserInDB(const std::string& name, const std::string& password);
-	bool ValidateLogin(const std::string& name, const std::string& password);
+    /** Returns true when a username already exists in the database. */
+    bool CheckUserExists(const std::string& username);
 
-	//función coger top 10
-	std::vector <PlayerData> GetTop10();
+    /** Validates the provided credentials against the stored hash. */
+    bool ValidateLogin(const std::string& username, const std::string& password);
 
-	//Getters
-	PlayerData GetPlayerbyID(int id);
-	PlayerData GetPlayerbyName(const std::string& name);
-	int GetPlayerRank(int id);
+    /** Returns the best ranked players ordered by score. */
+    std::vector<PlayerData> GetTopPlayers();
 
-	//Funciones de juego
-	bool UpdatePlayerStats(const std::string& username, int pointsToAdd, bool addVictory, bool addDefeat);
+    /** Returns the player data associated with an id. */
+    PlayerData GetPlayerById(int id);
+
+    /** Returns the player data associated with a username. */
+    PlayerData GetPlayerByName(const std::string& username);
+
+    /** Returns the ranking position of a player. */
+    int GetPlayerRank(int id);
+
+    /** Updates the score and result counters of a player. */
+    bool UpdatePlayerStats(const std::string& username, int pointsToAdd, bool addVictory, bool addDefeat);
 
 private:
-	sql::Driver* driver;
-	sql::Connection* con;
+    sql::Driver* driver;
+    sql::Connection* connection;
 
+    /** Generates a secure password hash using libsodium. */
+    std::string HashPassword(const std::string& password);
 
-	std::string HashPassword(const std::string& password);
-	bool VerifyPassword(const std::string& password, const std::string storeHash);
+    /** Checks whether a password matches a stored hash. */
+    bool VerifyPassword(const std::string& password, const std::string& storedHash);
 };
-

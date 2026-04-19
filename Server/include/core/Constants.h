@@ -1,23 +1,28 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 
-//SERVER CONSTANTS
-constexpr unsigned short LISTENER_PORT = 3360;
+// Network configuration.
+inline constexpr unsigned short kListenerPort = 3360;
 
-//GAME CONSTANTS
-static const int MAX_PLAYERS = 4;
-constexpr float TURN_LIMIT_SECONDS = 20.f;
+// Game configuration.
+inline constexpr std::size_t kMaxPlayers = 4;
+inline constexpr int kBoardRows = 6;
+inline constexpr int kBoardColumns = 6;
+inline constexpr int kWinningLineLength = 3;
+inline constexpr float kTurnLimitSeconds = 20.0f;
+inline constexpr int kTopRankingLimit = 10;
+inline constexpr int kSelectorWaitTimeMilliseconds = 50;
 
-//puntos jugadores
-static const int FIRSTWINNERPOINTS = 400;
-static const int SECONDWINNERPOINTS = 100;
-static const int THIRDWINNERPOINTS = 50;
-static const int LOSERPOINTS = -500;
+// Match scoring configuration.
+inline constexpr int kFirstWinnerPoints = 400;
+inline constexpr int kSecondWinnerPoints = 100;
+inline constexpr int kThirdWinnerPoints = 50;
+inline constexpr int kLoserPoints = -500;
 
-static const int POINTS[]{
-	FIRSTWINNERPOINTS,
-	SECONDWINNERPOINTS,
-	THIRDWINNERPOINTS,
+inline constexpr std::array<int, 3> kWinnerPoints{
+    kFirstWinnerPoints,
+    kSecondWinnerPoints,
+    kThirdWinnerPoints,
 };
-
-

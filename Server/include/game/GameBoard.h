@@ -30,7 +30,8 @@ public:
 	bool MakeMove(Cell cell, int row, int column);
 	Cell& GetCell(int row, int column);
 	int CountDirection(int row, int col, int dRow, int dCol, Cell cell);
-
+	
+	bool CheckDraw() const;
 	bool CheckWin(int row, int col, Cell cell);
 	void Reset();
 };

@@ -59,8 +59,9 @@ bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell&
     if (!IsPlayerTurn(socket))
         return false;
 
-    if (isSpectator[currentTurnIndex]) {
-        std::cout << "Player " << players[currentTurnIndex].GetUsername() << "Already won." << std::endl;
+    if (isSpectator[currentTurnIndex])
+    {
+        std::cout << "Player " << players[currentTurnIndex].GetUsername() << " Already won." << std::endl;
         AdvanceTurn();
         RestartTurnClock();
     }
@@ -69,19 +70,14 @@ bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell&
 
     int playerIndex = currentTurnIndex;
 
-    // mapear jugador -> ficha
     cell = static_cast<Cell>(playerIndex + 1);
 
     if (!board.MakeMove(cell, row, col))
         return false;
 
-    // comprobar victoria
     if (board.CheckWin(row, col, cell))
     {
         winners.push_back(players[playerIndex].GetUsername());
-		
-        //loosers.erase(loosers.begin() + playerIndex);
-        
         isSpectator[playerIndex] = true;
 
         if (winners.size() >= 3)
@@ -90,8 +86,19 @@ bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell&
         }
     }
 
-    AdvanceTurn();
-    RestartTurnClock();
+    // empate si el tablero se llena antes de acabar por victorias
+    if (!finished && board.CheckDraw())
+    {
+        draw = true;
+        finished = true;
+        std::cout << "La partida termina en empate." << std::endl;
+    }
+
+    if (!finished)
+    {
+        AdvanceTurn();
+        RestartTurnClock();
+    }
 
     return true;
 }

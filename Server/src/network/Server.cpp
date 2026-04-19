@@ -194,7 +194,7 @@ void Server::HandleClientMessages()
                         break;
                     }
                     
-                    CheckFinish(session->GetPlayers(), session->GetIsFinished());
+                    CheckFinish(session->GetPlayers(), session->GetIsFinished(), session->GetIsDraw());
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
 
@@ -590,21 +590,23 @@ void Server::BroadcastSkipTurnTimeout(GameSession* session)
     }
 }
 
-void Server::CheckFinish(std::vector<Player> players, bool _finished)
+void Server::CheckFinish(std::vector<Player> players, bool finished, bool isDraw)
 {
-    if (_finished)
+    if (finished)
     {
         sf::Packet packetFinished;
         tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
 
-        packetFinished << tipo;
+        packetFinished << tipo
+            << static_cast<std::int32_t>(isDraw);
 
         for (const auto& player : players)
         {
             SendPacket(player.GetSocket(), packetFinished, "game_finished");
         }
     }
-    else {
+    else
+    {
         std::cout << "No ha terminado todavia" << std::endl;
     }
 }

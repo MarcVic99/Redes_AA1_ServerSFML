@@ -25,6 +25,7 @@ private:
     sf::Clock turnClock;
     
     bool finished;
+    bool draw = false;
 
     bool HasTurnTimedOut() const;
     void RestartTurnClock();
@@ -48,6 +49,7 @@ public:
 	bool GetIsFinished() const { return finished; } 
 	std::vector<std::string> GetWinners() const { return winners; }
     const std::string& GetRoomId() const { return roomId; }
+    bool GetIsDraw() const { return draw; }
 
     bool HasPlayer(sf::TcpSocket* socket) const;
 

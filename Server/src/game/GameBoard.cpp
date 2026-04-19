@@ -63,6 +63,18 @@ bool GameBoard::CheckWin(int row, int col, Cell cell) {
     return false;
 }
 
+bool GameBoard::CheckDraw() const
+{
+    for (const auto& cell : board)
+    {
+        if (cell == Empty)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 void GameBoard::Reset()
 {
 }

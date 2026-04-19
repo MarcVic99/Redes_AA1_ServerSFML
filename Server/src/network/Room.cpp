@@ -1,56 +1,61 @@
 #include "network/Room.h"
 
-
-
-bool Room::AddPlayer(sf::TcpSocket* _socket, const std::string& _username) {
-    Player newPlayer = Player(_socket, _username);
-
-    for (auto& player : players)
+bool Room::AddPlayer(sf::TcpSocket* socket, const std::string& username)
+{
+    for (const Player& player : players)
     {
-        if (newPlayer.GetSocket() == player.GetSocket())
-            return false; // ya está dentro
+        if (socket == player.GetSocket())
+        {
+            return false;
+        }
     }
-    if (players.size() < MAX_PLAYERS) {
-        players.push_back(newPlayer);
-        return true;
+
+    if (players.size() >= kMaxPlayers)
+    {
+        return false;
     }
-    return false;
+
+    players.emplace_back(socket, username);
+    return true;
 }
 
 bool Room::RemovePlayer(sf::TcpSocket* socket)
 {
-    for (auto player = players.begin(); player != players.end(); ++player)
+    for (auto playerIterator = players.begin(); playerIterator != players.end(); ++playerIterator)
     {
-        if (player->GetSocket() == socket)
+        if (playerIterator->GetSocket() == socket)
         {
             std::cout << "Player removed from room " << id << std::endl;
-
-            players.erase(player);
+            players.erase(playerIterator);
             return true;
         }
     }
+
     return false;
 }
 
-
 bool Room::HasPlayer(sf::TcpSocket* socket) const
 {
-    for (const auto& player : players)
+    for (const Player& player : players)
     {
         if (player.GetSocket() == socket)
         {
             return true;
         }
     }
+
     return false;
 }
 
 int Room::GetPlayerIndex(sf::TcpSocket* socket) const
 {
-    for (int i = 0; i < players.size(); i++)
+    for (std::size_t index = 0; index < players.size(); ++index)
     {
-        if (players[i].GetSocket() == socket)
-            return i;
+        if (players[index].GetSocket() == socket)
+        {
+            return static_cast<int>(index);
+        }
     }
+
     return -1;
 }

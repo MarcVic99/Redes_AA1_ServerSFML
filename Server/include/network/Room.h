@@ -1,33 +1,43 @@
 #pragma once
-#include <vector>
-#include "Player.h"
 
-#include <string>
-#include "core/Constants.h"
 #include <iostream>
+#include <string>
+#include <vector>
 
-class Room {
-    std::string id;
-    std::vector<Player> players;
+#include "Player.h"
+#include "core/Constants.h"
 
+class Room
+{
 public:
-	int GetMaxPlayers() const { return MAX_PLAYERS; }
+    /** Returns the maximum number of players allowed in the room. */
+    std::size_t GetMaxPlayers() const { return kMaxPlayers; }
 
+    /** Returns the identifier of the room. */
     const std::string& GetId() const { return id; }
 
+    /** Sets the identifier of the room. */
     void SetId(const std::string& newId) { id = newId; }
-    
-    const std::vector<Player> GetPlayers() const { return players; }
 
+    /** Returns the players currently stored in the room. */
+    const std::vector<Player>& GetPlayers() const { return players; }
 
-    bool IsFull() const { return players.size() >= MAX_PLAYERS; }
+    /** Returns true when the room already reached its capacity. */
+    bool IsFull() const { return players.size() >= kMaxPlayers; }
 
+    /** Returns true when the provided socket belongs to a room player. */
     bool HasPlayer(sf::TcpSocket* socket) const;
 
-    bool AddPlayer(sf::TcpSocket* _socket, const std::string& _username);
+    /** Adds a player to the room if there is free space. */
+    bool AddPlayer(sf::TcpSocket* socket, const std::string& username);
 
+    /** Removes a player from the room. */
     bool RemovePlayer(sf::TcpSocket* socket);
 
+    /** Returns the index of a player in the room or -1 if it is missing. */
     int GetPlayerIndex(sf::TcpSocket* socket) const;
 
+private:
+    std::string id;
+    std::vector<Player> players;
 };

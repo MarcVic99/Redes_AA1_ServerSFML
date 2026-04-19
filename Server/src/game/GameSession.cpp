@@ -1,10 +1,15 @@
 #include "game/GameSession.h"
 
-GameSession::GameSession(const std::string& id, const std::vector<Player>& players)
-    : roomId(id),
-    players(players),
-    currentTurnIndex(0),
-    finished(false)
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+GameSession::GameSession(const std::string& roomIdValue, const std::vector<Player>& sessionPlayers)
+    : roomId(roomIdValue),
+      players(sessionPlayers),
+      currentTurnIndex(0),
+      finished(false),
+      draw(false)
 {
     isSpectator.resize(players.size(), false);
     losers = players;
@@ -15,89 +20,85 @@ GameSession::GameSession(const std::string& id, const std::vector<Player>& playe
 
 bool GameSession::IsPlayerTurn(sf::TcpSocket* socket) const
 {
-    return players[currentTurnIndex].GetSocket() == socket;
+    return currentTurnIndex < players.size() && players[currentTurnIndex].GetSocket() == socket;
 }
 
 bool GameSession::HasPlayer(sf::TcpSocket* socket) const
 {
-    for (const auto& player : players)
+    for (const Player& player : players)
     {
         if (player.GetSocket() == socket)
+        {
             return true;
+        }
     }
+
     return false;
 }
 
-//random de los colores
 void GameSession::AssignColors()
 {
-    std::vector<PlayerColor> colors =
-    {
+    std::array<PlayerColor, kMaxPlayers> colors{
         PlayerColor::Rojo,
         PlayerColor::Naranja,
         PlayerColor::Verde,
-        PlayerColor::Azul
+        PlayerColor::Azul,
     };
 
-    std::random_device rd;
-    std::mt19937 g(rd());
+    std::random_device randomDevice;
+    std::mt19937 generator(randomDevice());
+    std::shuffle(colors.begin(), colors.end(), generator);
 
-    std::shuffle(colors.begin(), colors.end(), g);
-
-    for (int i = 0; i < players.size(); i++)
+    for (std::size_t index = 0; index < players.size(); ++index)
     {
-        players[i].SetPlayerColor(colors[i]);
+        players[index].SetPlayerColor(colors[index]);
     }
 }
 
-
-bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell& cell)
+bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int column, Cell& cell)
 {
-    if (finished)
+    if (finished || !IsPlayerTurn(socket))
+    {
         return false;
-
-    if (!IsPlayerTurn(socket))
-        return false;
+    }
 
     if (isSpectator[currentTurnIndex])
     {
-        std::cout << "Player " << players[currentTurnIndex].GetUsername() << " Already won." << std::endl;
+        std::cout << "Player " << players[currentTurnIndex].GetUsername() << " already won." << std::endl;
         AdvanceTurn();
         RestartTurnClock();
+        return false;
     }
 
-    std::cout << "Making move" << std::endl;
-
-    int playerIndex = currentTurnIndex;
-
+    const std::size_t playerIndex = currentTurnIndex;
     cell = static_cast<Cell>(playerIndex + 1);
 
-    if (!board.MakeMove(cell, row, col))
+    if (!board.MakeMove(cell, row, column))
+    {
         return false;
+    }
 
-    if (board.CheckWin(row, col, cell))
+    if (board.CheckWin(row, column, cell))
     {
         winners.push_back(players[playerIndex]);
 
-        //borrar de loser el que ha ganado
-        for (auto it = losers.begin(); it != losers.end(); ++it)
+        for (auto loserIterator = losers.begin(); loserIterator != losers.end(); ++loserIterator)
         {
-            if (it->GetUsername() == players[playerIndex].GetUsername())
+            if (loserIterator->GetUsername() == players[playerIndex].GetUsername())
             {
-                losers.erase(it);
-                break; 
+                losers.erase(loserIterator);
+                break;
             }
         }
 
         isSpectator[playerIndex] = true;
 
-        if (winners.size() >= 3)
+        if (winners.size() >= kWinnerPoints.size())
         {
             finished = true;
         }
     }
 
-    // empate si el tablero se llena antes de acabar por victorias
     if (!finished && board.CheckDraw())
     {
         draw = true;
@@ -116,20 +117,19 @@ bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell&
 
 void GameSession::AdvanceTurn()
 {
-    int count = players.size();
+    const std::size_t playerCount = players.size();
 
-    for (int i = 0; i < count; i++)
+    for (std::size_t turnCount = 0; turnCount < playerCount; ++turnCount)
     {
-        currentTurnIndex = (currentTurnIndex + 1) % count;
+        currentTurnIndex = (currentTurnIndex + 1) % playerCount;
 
         if (!isSpectator[currentTurnIndex])
+        {
             return;
+        }
     }
 }
 
-
-
-//Temporizador funciones
 void GameSession::RestartTurnClock()
 {
     turnClock.restart();
@@ -137,19 +137,17 @@ void GameSession::RestartTurnClock()
 
 bool GameSession::HasTurnTimedOut() const
 {
-    return turnClock.getElapsedTime().asSeconds() >= TURN_LIMIT_SECONDS;
+    return turnClock.getElapsedTime().asSeconds() >= kTurnLimitSeconds;
 }
 
 bool GameSession::UpdateTurnTimeout()
 {
-    if (finished)
+    if (finished || !HasTurnTimedOut())
+    {
         return false;
+    }
 
-    if (!HasTurnTimedOut())
-        return false;
-
-    std::cout << "Turno agotado para jugador: "
-        << players[currentTurnIndex].GetUsername() << std::endl;
+    std::cout << "Turno agotado para jugador: " << players[currentTurnIndex].GetUsername() << std::endl;
 
     AdvanceTurn();
     RestartTurnClock();

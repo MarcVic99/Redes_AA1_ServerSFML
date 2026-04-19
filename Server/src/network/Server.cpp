@@ -194,7 +194,13 @@ void Server::HandleClientMessages()
                         break;
                     }
                     
-                    CheckFinish(session->GetPlayers(), session->GetWinners(), session->GetLosers(), session->GetIsFinished());
+                    if (session->GetIsFinished())
+                    {
+                        CheckFinish(session->GetPlayers(), session->GetWinners(), session->GetLosers(), session->GetIsFinished());
+
+                        std::cout << "Partida finalizada del todo todisimo, que quede uno de los dos" << std::endl;
+                        break;
+                    }
 
                     BroadcastPlayerMove(session, clients[i], cell, row, column);
 
@@ -590,10 +596,7 @@ void Server::BroadcastSkipTurnTimeout(GameSession* session)
     }
 }
 
-void Server::CheckFinish(std::vector<Player> players,
-                         std::vector<Player> winners,
-                         std::vector<Player> losers,
-                         bool finished)
+void Server::CheckFinish(std::vector<Player> players, std::vector<Player> winners, std::vector<Player> losers, bool finished)
 {
     if (finished)
     {

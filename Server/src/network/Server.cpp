@@ -591,20 +591,14 @@ void Server::BroadcastSkipTurnTimeout(GameSession* session)
     }
 }
 
-void Server::CheckFinish(std::vector<Player> players, bool _finished, std::vector<Player> winners)
+void Server::CheckFinish(std::vector<Player> players, bool _finished)
 {
     if (_finished)
     {
         sf::Packet packetFinished;
-
         tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
 
         packetFinished << tipo;
-
-        for (int i = 0; i < winners.size(); i++)
-        {
-            packetFinished << winners[i].GetUsername();
-        }
 
         for (const auto& player : players)
         {

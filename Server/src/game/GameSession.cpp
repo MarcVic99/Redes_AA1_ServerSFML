@@ -79,6 +79,8 @@ bool GameSession::SessionMakeMove(sf::TcpSocket* socket, int row, int col, Cell&
     if (board.CheckWin(row, col, cell))
     {
         winners.push_back(players[playerIndex].GetUsername());
+		
+        //loosers.erase(loosers.begin() + playerIndex);
         
         isSpectator[playerIndex] = true;
 

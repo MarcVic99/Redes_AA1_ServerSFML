@@ -194,6 +194,8 @@ void Server::HandleClientMessages()
                         break;
                     }
                     
+                    BroadcastPlayerMove(session, clients[i], cell, row, column);
+
                     if (session->GetIsFinished())
                     {
                         CheckFinish(session->GetPlayers(), session->GetWinners(), session->GetLosers(), session->GetIsFinished());
@@ -201,8 +203,6 @@ void Server::HandleClientMessages()
                         std::cout << "Partida finalizada del todo todisimo, que quede uno de los dos" << std::endl;
                         break;
                     }
-
-                    BroadcastPlayerMove(session, clients[i], cell, row, column);
 
 					std::cout << "Player move: row=" << row << " column=" << column << " cell=" << static_cast<int>(cell) << std::endl;
                     break;
@@ -596,41 +596,44 @@ void Server::BroadcastSkipTurnTimeout(GameSession* session)
     }
 }
 
-void Server::CheckFinish(std::vector<Player> players, std::vector<Player> winners, std::vector<Player> losers, bool finished)
+void Server::CheckFinish(const std::vector<Player>& players, const std::vector<Player>& winners, const std::vector<Player>& losers, bool finished)
 {
-    if (finished)
-    {
-        sf::Packet packetFinished;
-        tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
-
-        packetFinished << tipo;
-
-        std::int32_t totalPlayers = static_cast<std::int32_t>(winners.size() + losers.size());
-        packetFinished << totalPlayers;
-
-        int indice = 0;
-
-        for (const Player& winner : winners)
-        {
-            packetFinished << winner.GetUsername();
-            packetFinished << static_cast<std::int32_t>(POINTS[indice]);
-            indice++;
-        }
-
-        for (const Player& loser : losers)
-        {
-            packetFinished << loser.GetUsername();
-            packetFinished << static_cast<std::int32_t>(LOSERPOINTS);
-        }
-
-        for (const auto& player : players)
-        {
-            SendPacket(player.GetSocket(), packetFinished, "game_finished");
-        }
-    }
-    else
+    if (!finished)
     {
         std::cout << "No ha terminado todavia" << std::endl;
+        return;
+    }
+
+    sf::Packet packetFinished;
+    tipoPaquete tipo = tipoPaquete::GAME_FINISHED;
+
+    packetFinished << tipo;
+
+    std::int32_t totalPlayers = static_cast<std::int32_t>(winners.size() + losers.size());
+    packetFinished << totalPlayers;
+
+    int indice = 0;
+
+    for (const Player& winner : winners)
+    {
+        databaseManager.UpdatePlayerStats(winner.GetUsername(), POINTS[indice], true, false);
+
+        packetFinished << winner.GetUsername();
+        packetFinished << static_cast<std::int32_t>(POINTS[indice]);
+        indice++;
+    }
+
+    for (const Player& loser : losers)
+    {
+        databaseManager.UpdatePlayerStats(loser.GetUsername(), LOSERPOINTS, false, true);
+
+        packetFinished << loser.GetUsername();
+        packetFinished << static_cast<std::int32_t>(LOSERPOINTS);
+    }
+
+    for (const auto& player : players)
+    {
+        SendPacket(player.GetSocket(), packetFinished, "game_finished");
     }
 }
 

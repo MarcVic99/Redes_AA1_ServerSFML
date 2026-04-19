@@ -45,6 +45,9 @@ public:
 	PlayerData GetPlayerbyName(const std::string& name);
 	int GetPlayerRank(int id);
 
+	//Funciones de juego
+	bool UpdatePlayerStats(const std::string& username, int pointsToAdd, bool addVictory, bool addDefeat);
+
 private:
 	sql::Driver* driver;
 	sql::Connection* con;

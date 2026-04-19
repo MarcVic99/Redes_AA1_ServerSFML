@@ -254,6 +254,7 @@ PlayerData DatabaseManager::GetPlayerbyName(const std::string& name)
 	return data;
 }
 
+
 int DatabaseManager::GetPlayerRank(int id)
 {
 	int rank = -1;
@@ -263,7 +264,6 @@ int DatabaseManager::GetPlayerRank(int id)
 
 	try
 	{
-
 		sql::Statement* stmt = con->createStatement();
 		sql::ResultSet* res =
 			stmt->executeQuery(
@@ -287,6 +287,42 @@ int DatabaseManager::GetPlayerRank(int id)
 	return rank;
 }
 
+bool DatabaseManager::UpdatePlayerStats(const std::string& username, int pointsToAdd, bool addVictory, bool addDefeat)
+{
+	if (con == nullptr)
+	{
+		return false;
+	}
+
+	try
+	{
+		sql::PreparedStatement* stmt = con->prepareStatement(
+			"UPDATE users "
+			"SET puntuacion_total = puntuacion_total + ?, "
+			"victorias = victorias + ?, "
+			"derrotas = derrotas + ? "
+			"WHERE user = ?"
+		);
+
+		stmt->setInt(1, pointsToAdd);
+		stmt->setInt(2, addVictory);
+		stmt->setInt(3, addDefeat);
+		stmt->setString(4, username);
+
+		int affectedRows = stmt->executeUpdate();
+
+		delete stmt;
+		std::cout << "Stats actualizadas para: " << username << " | puntos +" << pointsToAdd << " | victoria: " << addVictory<< " | derrota: " << addDefeat << std::endl;
+
+		return true;
+	}
+	catch (sql::SQLException e)
+	{
+		std::cout << "Error updating player stats: " << e.what() << std::endl;
+		return false;
+	}
+}
+
 
 
 //-------------------------------------- Funciones de hasheo de password -----------------------------------------
@@ -307,6 +343,7 @@ std::string DatabaseManager::HashPassword(const std::string& password)
 
 	return std::string(hashedPassword);
 }
+
 
 bool DatabaseManager::VerifyPassword(const std::string& password, const std::string storedHash)
 {

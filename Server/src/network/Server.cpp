@@ -1,5 +1,6 @@
 #include "network/Server.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -26,6 +27,7 @@ int Server::Run()
 
     const sf::Time selectorWaitTime = sf::milliseconds(kSelectorWaitTimeMilliseconds);
 
+
     while (true)
     {
         if (selector.wait(selectorWaitTime))
@@ -36,15 +38,6 @@ int Server::Run()
             }
 
             HandleClientMessages();
-        }
-
-        for (GameSession& session : sessions)
-        {
-            if (session.UpdateTurnTimeout())
-            {
-                std::cout << "Turno saltado por timeout en room: " << session.GetRoomId() << std::endl;
-                BroadcastSkipTurnTimeout(&session);
-            }
         }
     }
 
@@ -62,7 +55,7 @@ bool Server::InitializeListener()
     }
 
     selector.add(listener);
-    std::cout << "Servidor escuchando en puerto " << kListenerPort << std::endl;
+    std::cout << "Servidor bootstrap escuchando en puerto " << kListenerPort << std::endl;
     return true;
 }
 
@@ -75,6 +68,7 @@ void Server::HandleNewConnection()
         newClient->setBlocking(false);
         selector.add(*newClient);
         clients.push_back(newClient);
+
         std::cout << "Nueva conexion establecida" << std::endl;
         return;
     }
@@ -119,88 +113,36 @@ void Server::HandleClientMessages()
                 HandleGetRanking(*client, packet);
                 break;
 
+            case tipoPaquete::PEER_READY:
+                HandlePeerReady(*client, packet);
+                break;
+
             case tipoPaquete::CREATE_ROOM:
             {
-                std::string username;
                 std::string roomId;
-                packet >> roomId >> username;
-                CreateRoom(client, username, roomId);
+                std::string ignoredUsername;
+                packet >> roomId >> ignoredUsername;
+
+                CreateRoom(client, roomId);
                 break;
             }
 
             case tipoPaquete::JOIN_ROOM:
             {
                 std::string roomId;
-                std::string username;
-                packet >> roomId >> username;
-                JoinRoom(client, roomId, username);
+                std::string ignoredUsername;
+                packet >> roomId >> ignoredUsername;
+
+                JoinRoom(client, roomId);
                 break;
             }
 
-            case tipoPaquete::PLAYERS_GAME_REQUEST:
-            {
-                GameSession* session = GetSessionByClient(client);
-                std::cout << "Client requests players in game. Session found: " << (session != nullptr) << std::endl;
-
-                if (session == nullptr)
-                {
-                    std::cout << "Session not found for client" << std::endl;
-                    break;
-                }
-
-                SendPlayers(client, session->GetPlayers());
+            case tipoPaquete::REPORT_MATCH_RESULT:
+                HandleMatchResult(*client, packet);
                 break;
-            }
-
-            case tipoPaquete::PLAYER_MOVE:
-            {
-                GameSession* session = GetSessionByClient(client);
-
-                if (session == nullptr)
-                {
-                    std::cout << "Session not found for client" << std::endl;
-                    break;
-                }
-
-                std::int32_t row = 0;
-                std::int32_t column = 0;
-                std::string username;
-
-                packet >> username >> row >> column;
-
-                Cell cell = Cell::Empty;
-
-                if (!session->SessionMakeMove(client, row, column, cell))
-                {
-                    std::cout << "Invalid move from client " << username << ": row=" << row << " column=" << column << std::endl;
-
-                    if (session->IsFinished())
-                    {
-                        const std::vector<Player>& winners = session->GetWinners();
-                        std::cout << "Game finished. Winners: ";
-                        for (const Player& winner : winners)
-                        {
-                            std::cout << winner.GetUsername() << ' ';
-                        }
-                        std::cout << std::endl;
-                    }
-                    break;
-                }
-
-                BroadcastPlayerMove(session, client, cell, row, column);
-
-                if (session->IsFinished())
-                {
-                    CheckFinish(session->GetPlayers(), session->GetWinners(), session->GetLosers(), session->IsFinished());
-                    std::cout << "Partida finalizada del todo" << std::endl;
-                    break;
-                }
-
-                std::cout << "Player move: row=" << row << " column=" << column << " cell=" << static_cast<int>(cell) << std::endl;
-                break;
-            }
 
             default:
+                std::cout << "Paquete no gestionado por el bootstrap server" << std::endl;
                 break;
             }
         }
@@ -208,10 +150,8 @@ void Server::HandleClientMessages()
         {
             std::cout << "Cliente desconectado" << std::endl;
 
-            for (Room& room : rooms)
-            {
-                room.RemovePlayer(client);
-            }
+            RemoveClientFromRooms(client);
+            authenticatedClients.erase(client);
 
             RemoveClient(index);
             --index;
@@ -227,6 +167,7 @@ void Server::HandleHandshake(sf::TcpSocket& client, sf::Packet& packet)
 
     std::string message;
     packet >> message;
+
     std::cout << "Handshake recibido: " << message << std::endl;
 
     sf::Packet response;
@@ -251,12 +192,20 @@ void Server::HandleLogin(sf::TcpSocket& client, sf::Packet& packet)
     std::string password;
 
     packet >> username >> password;
-    std::cout << "Login recibido:" << std::endl
-              << "User: " << username << " Password: " << password << std::endl;
+
+    // Ya no mostramos la password por consola. Para debug esta bien saber
+    // que ha llegado algo, pero no hace falta imprimir datos sensibles.
+    std::cout << "Login recibido de usuario: " << username << std::endl;
 
     sf::Packet response;
     if (databaseManager.ValidateLogin(username, password))
     {
+        const PlayerData playerData = databaseManager.GetPlayerbyName(username);
+
+        authenticatedClients[&client].userId = playerData.id;
+        authenticatedClients[&client].username = playerData.user;
+        authenticatedClients[&client].authenticated = true;
+
         response << tipoPaquete::LOGIN_OK << kClientVerifiedMessage;
     }
     else
@@ -269,7 +218,10 @@ void Server::HandleLogin(sf::TcpSocket& client, sf::Packet& packet)
         return;
     }
 
-    SendPlayerInfo(client, username);
+    if (IsClientAuthenticated(&client))
+    {
+        SendPlayerInfo(client, username);
+    }
 }
 
 void Server::HandleRegister(sf::TcpSocket& client, sf::Packet& packet)
@@ -281,12 +233,18 @@ void Server::HandleRegister(sf::TcpSocket& client, sf::Packet& packet)
     std::string password;
 
     packet >> username >> password;
-    std::cout << "Registro recibido:" << std::endl
-              << "User: " << username << " Password: " << password << std::endl;
+
+    std::cout << "Registro recibido de usuario: " << username << std::endl;
 
     sf::Packet response;
     if (databaseManager.RegisterUser(username, password))
     {
+        const PlayerData playerData = databaseManager.GetPlayerbyName(username);
+
+        authenticatedClients[&client].userId = playerData.id;
+        authenticatedClients[&client].username = playerData.user;
+        authenticatedClients[&client].authenticated = true;
+
         response << tipoPaquete::REGISTER_OK << kClientCreatedMessage;
     }
     else
@@ -299,7 +257,10 @@ void Server::HandleRegister(sf::TcpSocket& client, sf::Packet& packet)
         return;
     }
 
-    SendPlayerInfo(client, username);
+    if (IsClientAuthenticated(&client))
+    {
+        SendPlayerInfo(client, username);
+    }
 }
 
 void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet& packet)
@@ -315,18 +276,24 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet& packet)
     response << tipoPaquete::RECEIVE_RANKING;
     response << static_cast<std::int32_t>(topPlayers.size());
 
-    for (const PlayerData& playerData : topPlayers)
+    // Enviamos el top que tengamos en DB. Si en el cliente luego quereis
+    // cortar a top 10 exacto, se puede hacer alli, pero la idea es que salga
+    // ya preparado desde servidor.
+    for (std::size_t index = 0; index < topPlayers.size(); ++index)
     {
+        const PlayerData& playerData = topPlayers[index];
+
+        response << static_cast<std::int32_t>(index + 1);
         response << playerData.user;
         response << static_cast<std::int32_t>(playerData.puntuacion_total);
         response << static_cast<std::int32_t>(playerData.victorias);
         response << static_cast<std::int32_t>(playerData.derrotas);
 
         std::cout << "Ranking: " << playerData.user
-                  << " Puntuacion: " << playerData.puntuacion_total
-                  << " Victorias: " << playerData.victorias
-                  << " Derrotas: " << playerData.derrotas
-                  << std::endl;
+            << " Puntuacion: " << playerData.puntuacion_total
+            << " Victorias: " << playerData.victorias
+            << " Derrotas: " << playerData.derrotas
+            << std::endl;
     }
 
     const PlayerData currentUserData = databaseManager.GetPlayerById(userId);
@@ -339,6 +306,110 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet& packet)
     response << currentUserData.derrotas;
 
     SendPacket(&client, response, "get_ranking");
+}
+
+void Server::HandlePeerReady(sf::TcpSocket& client, sf::Packet& packet)
+{
+    int peerPort = 0;
+    packet >> peerPort;
+
+    if (!IsClientAuthenticated(&client))
+    {
+        std::cout << "PEER_READY rechazado: cliente no autenticado" << std::endl;
+        return;
+    }
+
+    authenticatedClients[&client].peerPort = peerPort;
+
+    std::cout << "Cliente " << authenticatedClients[&client].username
+        << " escuchara P2P en puerto " << peerPort << std::endl;
+
+    sf::Packet response;
+    response << tipoPaquete::PEER_READY_OK;
+    SendPacket(&client, response, "peer_ready_ok");
+}
+
+void Server::HandleMatchResult(sf::TcpSocket& client, sf::Packet& packet)
+{
+    if (!IsClientAuthenticated(&client))
+    {
+        std::cout << "Resultado rechazado: cliente no autenticado" << std::endl;
+        return;
+    }
+
+    std::string roomId;
+    std::int32_t totalPlayers = 0;
+
+    packet >> roomId >> totalPlayers;
+
+    MatchReportData report;
+    report.reporterUserId = authenticatedClients[&client].userId;
+
+    for (std::int32_t index = 0; index < totalPlayers; ++index)
+    {
+        std::string username;
+        packet >> username;
+        report.orderedPlayers.push_back(username);
+    }
+
+    PendingMatchResult& pendingResult = pendingResults[roomId];
+
+    // Si este jugador ya habia reportado, no dejamos duplicados.
+    auto existingReport = std::find_if(
+        pendingResult.reports.begin(),
+        pendingResult.reports.end(),
+        [&](const MatchReportData& currentReport)
+        {
+            return currentReport.reporterUserId == report.reporterUserId;
+        });
+
+    if (existingReport != pendingResult.reports.end())
+    {
+        *existingReport = report;
+    }
+    else
+    {
+        pendingResult.reports.push_back(report);
+    }
+
+    std::cout << "Resultado recibido para room " << roomId
+        << " desde usuario " << authenticatedClients[&client].username
+        << std::endl;
+
+    if (!pendingResult.rankingApplied)
+    {
+        for (std::size_t first = 0; first < pendingResult.reports.size(); ++first)
+        {
+            for (std::size_t second = first + 1; second < pendingResult.reports.size(); ++second)
+            {
+                if (pendingResult.reports[first].orderedPlayers == pendingResult.reports[second].orderedPlayers)
+                {
+                    ApplyValidatedResult(pendingResult.reports[first].orderedPlayers);
+                    pendingResult.rankingApplied = true;
+
+                    std::cout << "Resultado validado por pares para room " << roomId << std::endl;
+                    break;
+                }
+            }
+
+            if (pendingResult.rankingApplied)
+            {
+                break;
+            }
+        }
+    }
+
+    sf::Packet response;
+    if (pendingResult.rankingApplied)
+    {
+        response << tipoPaquete::REPORT_MATCH_RESULT_OK;
+        SendPacket(&client, response, "match_result_ok");
+    }
+    else
+    {
+        response << tipoPaquete::REPORT_MATCH_RESULT_ERROR;
+        SendPacket(&client, response, "match_result_pending");
+    }
 }
 
 bool Server::SendPacket(sf::TcpSocket* socket, sf::Packet& packet, const std::string& context)
@@ -365,8 +436,52 @@ void Server::RemoveClient(std::size_t index)
     clients.erase(clients.begin() + static_cast<std::ptrdiff_t>(index));
 }
 
-void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, const std::string& roomId)
+void Server::RemoveClientFromRooms(sf::TcpSocket* client)
 {
+    for (std::size_t roomIndex = 0; roomIndex < rooms.size();)
+    {
+        Room& room = rooms[roomIndex];
+        const std::string roomId = room.GetId();
+
+        room.RemovePlayer(client);
+
+        if (room.GetPlayers().empty())
+        {
+            std::cout << "Sala " << roomId << " eliminada porque se ha quedado vacia" << std::endl;
+            rooms.erase(rooms.begin() + static_cast<std::ptrdiff_t>(roomIndex));
+            continue;
+        }
+
+        ++roomIndex;
+    }
+}
+
+void Server::RemoveRoomIfEmpty(const std::string& roomId)
+{
+    for (auto roomIterator = rooms.begin(); roomIterator != rooms.end(); ++roomIterator)
+    {
+        if (roomIterator->GetId() == roomId && roomIterator->GetPlayers().empty())
+        {
+            rooms.erase(roomIterator);
+            return;
+        }
+    }
+}
+
+void Server::CreateRoom(sf::TcpSocket* client, const std::string& roomId)
+{
+    if (!IsClientAuthenticated(client))
+    {
+        std::cout << "CREATE_ROOM rechazado: cliente no autenticado" << std::endl;
+        return;
+    }
+
+    if (GetPeerPort(client) == 0)
+    {
+        std::cout << "CREATE_ROOM rechazado: el cliente aun no ha enviado su puerto P2P" << std::endl;
+        return;
+    }
+
     for (const Room& room : rooms)
     {
         if (room.GetId() == roomId)
@@ -374,6 +489,7 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, cons
             sf::Packet packet;
             packet << tipoPaquete::CREATE_ROOM_ERROR;
             SendPacket(client, packet, "create_room_error");
+
             std::cout << "Room id " << roomId << " already exists" << std::endl;
             return;
         }
@@ -381,7 +497,7 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, cons
 
     Room newRoom;
     newRoom.SetId(roomId);
-    newRoom.AddPlayer(client, username);
+    newRoom.AddPlayer(client, GetAuthenticatedUsername(client));
     rooms.push_back(newRoom);
 
     std::cout << "Created room id: " << newRoom.GetId() << std::endl;
@@ -393,13 +509,28 @@ void Server::CreateRoom(sf::TcpSocket* client, const std::string& username, cons
     SendPacket(client, packet, "create_room_ok");
 }
 
-void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId, const std::string& username)
+void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId)
 {
+    if (!IsClientAuthenticated(client))
+    {
+        std::cout << "JOIN_ROOM rechazado: cliente no autenticado" << std::endl;
+        return;
+    }
+
+    if (GetPeerPort(client) == 0)
+    {
+        std::cout << "JOIN_ROOM rechazado: el cliente aun no ha enviado su puerto P2P" << std::endl;
+        return;
+    }
+
     std::cout << "Trying join room: " << roomId << std::endl;
 
-    for (Room& room : rooms)
+    for (std::size_t roomIndex = 0; roomIndex < rooms.size(); ++roomIndex)
     {
-        std::cout << "Checking room id: " << room.GetId() << " players: " << room.GetPlayers().size() << std::endl;
+        Room& room = rooms[roomIndex];
+
+        std::cout << "Checking room id: " << room.GetId()
+            << " players: " << room.GetPlayers().size() << std::endl;
 
         if (room.GetId() != roomId)
         {
@@ -419,13 +550,15 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId, const st
             sf::Packet packet;
             packet << tipoPaquete::JOIN_ROOM_ERROR;
             SendPacket(client, packet, "join_room_error");
+
             std::cout << "Client already in room " << roomId << std::endl;
             return;
         }
 
-        room.AddPlayer(client, username);
+        room.AddPlayer(client, GetAuthenticatedUsername(client));
 
-        std::cout << "Joined room " << roomId << ", players now: " << room.GetPlayers().size() << std::endl;
+        std::cout << "Joined room " << roomId
+            << ", players now: " << room.GetPlayers().size() << std::endl;
 
         sf::Packet packet;
         packet << tipoPaquete::JOIN_ROOM_OK << roomId;
@@ -433,19 +566,13 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId, const st
 
         if (room.IsFull())
         {
-            std::cout << "Room " << roomId << " is full. Starting game..." << std::endl;
+            std::cout << "Room " << roomId << " is full. Preparing P2P match..." << std::endl;
 
-            sessions.emplace_back(room.GetId(), room.GetPlayers());
+            SendMatchReady(room);
 
-            sf::Packet startPacket;
-            startPacket << tipoPaquete::START_GAME
-                        << room.GetId()
-                        << static_cast<std::int32_t>(room.GetPlayers().size());
-
-            for (const Player& player : room.GetPlayers())
-            {
-                SendPacket(player.GetSocket(), startPacket, "start_game");
-            }
+            // Importante: una vez arranca la partida, esta sala deja de existir
+            // en el bootstrap. Asi ya puede volver a crearse otra con el mismo id.
+            rooms.erase(rooms.begin() + static_cast<std::ptrdiff_t>(roomIndex));
         }
 
         return;
@@ -454,32 +581,53 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId, const st
     sf::Packet packet;
     packet << tipoPaquete::JOIN_ROOM_ERROR;
     SendPacket(client, packet, "join_room_error");
+
     std::cout << "Room id " << roomId << " doesn't exist" << std::endl;
 }
 
-void Server::SendPlayers(sf::TcpSocket* client, const std::vector<Player>& players)
+void Server::SendMatchReady(Room& room)
 {
-    sf::Packet packet;
+    const std::vector<Player>& players = room.GetPlayers();
 
-    packet << tipoPaquete::PLAYERS_GAME_RESPONSE;
-    packet << static_cast<std::int32_t>(players.size());
-
-    for (const auto& player : players)
+    if (players.empty())
     {
-        PlayerData data = databaseManager.GetPlayerbyName(player.GetUsername());
-
-        packet << player.GetUsername();
-        packet << static_cast<std::int32_t>(data.puntuacion_total);
-        packet << static_cast<std::int32_t>(player.GetPlayerColor());
-
-        std::cout << "SendPlayers -> "
-            << player.GetUsername()
-            << " score=" << data.puntuacion_total
-            << " color=" << static_cast<int>(player.GetPlayerColor())
-            << std::endl;
+        return;
     }
 
-    SendPacket(client, packet, "players_game_response");
+    // Elegimos como host al primer jugador que entro en la sala.
+    sf::TcpSocket* hostSocket = players.front().GetSocket();
+    const std::string hostUsername = players.front().GetUsername();
+    const sf::IpAddress hostAddress = hostSocket->getRemoteAddress();
+    const std::uint16_t hostPort = GetPeerPort(hostSocket);
+
+    for (const Player& targetPlayer : players)
+    {
+        sf::Packet startPacket;
+        startPacket << tipoPaquete::START_GAME;
+        startPacket << room.GetId();
+        startPacket << hostUsername;
+        startPacket << hostAddress.toString();
+        startPacket << static_cast<std::int32_t>(hostPort);
+        startPacket << static_cast<std::int32_t>(players.size());
+
+        // Aprovechamos este paquete para mandar tambien los datos basicos
+        // de los jugadores que se veran en la UI del gameplay.
+        for (const Player& currentPlayer : players)
+        {
+            const PlayerData data = databaseManager.GetPlayerbyName(currentPlayer.GetUsername());
+
+            startPacket << currentPlayer.GetUsername();
+            startPacket << static_cast<std::int32_t>(data.id);
+            startPacket << static_cast<std::int32_t>(data.puntuacion_total);
+        }
+
+        SendPacket(targetPlayer.GetSocket(), startPacket, "start_game");
+    }
+
+    std::cout << "Datos P2P enviados para la room " << room.GetId()
+        << ". Host: " << hostUsername
+        << " (" << hostAddress.toString() << ":" << hostPort << ")"
+        << std::endl;
 }
 
 void Server::SendPlayerInfo(sf::TcpSocket& client, const std::string& username)
@@ -493,101 +641,68 @@ void Server::SendPlayerInfo(sf::TcpSocket& client, const std::string& username)
     }
 
     sf::Packet packet;
-    packet << tipoPaquete::USER_INFO << static_cast<std::int32_t>(playerData.id) << playerData.user;
+    packet << tipoPaquete::USER_INFO
+        << static_cast<std::int32_t>(playerData.id)
+        << playerData.user;
 
     std::cout << "Sending player info to client: ID=" << playerData.id
-              << " Username='" << playerData.user
-              << "' size=" << playerData.user.size()
-              << std::endl;
+        << " Username='" << playerData.user << "'"
+        << std::endl;
 
     SendPacket(&client, packet, "user_info");
 }
 
-GameSession* Server::GetSessionByClient(sf::TcpSocket* client)
+void Server::ApplyValidatedResult(const std::vector<std::string>& orderedPlayers)
 {
-    for (GameSession& session : sessions)
+    // Mantenemos la misma idea que ya teniais: los ganadores reciben
+    // puntos segun su posicion y el ultimo/ultimos pierden puntos.
+    for (std::size_t index = 0; index < orderedPlayers.size(); ++index)
     {
-        if (session.HasPlayer(client))
-        {
-            return &session;
-        }
-    }
+        const bool isWinner = index < kWinnerPoints.size();
+        const int pointsDelta = isWinner ? kWinnerPoints[index] : kLoserPoints;
 
-    return nullptr;
-}
-
-void Server::BroadcastPlayerMove(GameSession* session, sf::TcpSocket* sender, Cell cell, int row, int column)
-{
-    sf::Packet packet;
-    packet << tipoPaquete::BROADCAST_PLAYER_MOVE
-           << static_cast<std::int32_t>(cell)
-           << row
-           << column
-           << static_cast<std::int32_t>(session->GetCurrentTurnIndex());
-
-    for (const Player& player : session->GetPlayers())
-    {
-        sf::TcpSocket* target = player.GetSocket();
-
-        if (target == sender)
-        {
-            continue;
-        }
-
-        SendPacket(target, packet, "broadcast_player_move");
-        std::cout << "Broadcasting move to player " << player.GetUsername()
-                  << ": cell=" << static_cast<int>(cell)
-                  << " row=" << row
-                  << " column=" << column
-                  << std::endl;
+        databaseManager.UpdatePlayerStats(
+            orderedPlayers[index],
+            pointsDelta,
+            isWinner,
+            !isWinner);
     }
 }
 
-void Server::BroadcastSkipTurnTimeout(GameSession* session)
+bool Server::IsClientAuthenticated(sf::TcpSocket* client) const
 {
-    sf::Packet packet;
-    packet << tipoPaquete::SKIP_TURN << static_cast<std::int32_t>(session->GetCurrentTurnIndex());
+    const auto foundClient = authenticatedClients.find(client);
 
-    for (const Player& player : session->GetPlayers())
+    if (foundClient == authenticatedClients.end())
     {
-        SendPacket(player.GetSocket(), packet, "turn_timeout");
+        return false;
     }
+
+    return foundClient->second.authenticated;
 }
 
-void Server::CheckFinish(const std::vector<Player>& players, const std::vector<Player>& winners, const std::vector<Player>& losers, bool isFinished)
+std::string Server::GetAuthenticatedUsername(sf::TcpSocket* client) const
 {
-    if (!isFinished)
+    const auto foundClient = authenticatedClients.find(client);
+
+    if (foundClient == authenticatedClients.end())
     {
-        std::cout << "No ha terminado todavia" << std::endl;
-        return;
+        return "";
     }
 
-    sf::Packet finishedPacket;
-    finishedPacket << tipoPaquete::GAME_FINISHED;
+    return foundClient->second.username;
+}
 
-    const std::int32_t totalPlayers = static_cast<std::int32_t>(winners.size() + losers.size());
-    finishedPacket << totalPlayers;
+std::uint16_t Server::GetPeerPort(sf::TcpSocket* client) const
+{
+    const auto foundClient = authenticatedClients.find(client);
 
-    std::size_t winnerIndex = 0;
-    for (const Player& winner : winners)
+    if (foundClient == authenticatedClients.end())
     {
-        databaseManager.UpdatePlayerStats(winner.GetUsername(), kWinnerPoints[winnerIndex], true, false);
-        finishedPacket << winner.GetUsername();
-        finishedPacket << static_cast<std::int32_t>(kWinnerPoints[winnerIndex]);
-        ++winnerIndex;
+        return 0;
     }
 
-    for (const Player& loser : losers)
-    {
-        databaseManager.UpdatePlayerStats(loser.GetUsername(), kLoserPoints, false, true);
-        finishedPacket << loser.GetUsername();
-        finishedPacket << static_cast<std::int32_t>(kLoserPoints);
-    }
-
-    for (const Player& player : players)
-    {
-        SendPacket(player.GetSocket(), finishedPacket, "game_finished");
-    }
+    return foundClient->second.peerPort;
 }
 
 void Server::Shutdown()
@@ -598,4 +713,7 @@ void Server::Shutdown()
     }
 
     clients.clear();
+    authenticatedClients.clear();
+    pendingResults.clear();
+    rooms.clear();
 }

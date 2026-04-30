@@ -31,7 +31,12 @@ enum class tipoPaquete
     PLAYER_MOVE,
     BROADCAST_PLAYER_MOVE,
     SKIP_TURN,
-    GAME_FINISHED
+    GAME_FINISHED,
+    PEER_READY,
+    PEER_READY_OK,
+    REPORT_MATCH_RESULT,
+    REPORT_MATCH_RESULT_OK,
+    REPORT_MATCH_RESULT_ERROR
 };
 
 inline sf::Packet& operator>>(sf::Packet& packet, tipoPaquete& tipo)

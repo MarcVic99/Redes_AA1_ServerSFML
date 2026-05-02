@@ -479,7 +479,51 @@ void Server::SendPlayers(sf::TcpSocket* client, const std::vector<Player>& playe
             << std::endl;
     }
 
+<<<<<<< Updated upstream
     SendPacket(client, packet, "players_game_response");
+=======
+    // Elegimos como host al primer jugador que entro en la sala.
+    sf::TcpSocket* hostSocket = players.front().GetSocket();
+    const std::string hostUsername = players.front().GetUsername();
+    const std::optional<sf::IpAddress> hostAddressOptional = hostSocket->getRemoteAddress();
+    if (!hostAddressOptional.has_value())
+    {
+        std::cout << "No se ha podido obtener la IP remota del host de la sala "
+            << room.GetId() << std::endl;
+        return;
+    }
+
+    const sf::IpAddress& hostAddress = *hostAddressOptional;    const std::uint16_t hostPort = GetPeerPort(hostSocket);
+
+    for (const Player& targetPlayer : players)
+    {
+        sf::Packet startPacket;
+        startPacket << tipoPaquete::START_GAME;
+        startPacket << room.GetId();
+        startPacket << hostUsername;
+        startPacket << hostAddress.toString();
+        startPacket << static_cast<std::int32_t>(hostPort);
+        startPacket << static_cast<std::int32_t>(players.size());
+
+        // Aprovechamos este paquete para mandar tambien los datos basicos
+        // de los jugadores que se veran en la UI del gameplay.
+        for (const Player& currentPlayer : players)
+        {
+            const PlayerData data = databaseManager.GetPlayerbyName(currentPlayer.GetUsername());
+
+            startPacket << currentPlayer.GetUsername();
+            startPacket << static_cast<std::int32_t>(data.id);
+            startPacket << static_cast<std::int32_t>(data.puntuacion_total);
+        }
+
+        SendPacket(targetPlayer.GetSocket(), startPacket, "start_game");
+    }
+
+    std::cout << "Datos P2P enviados para la room " << room.GetId()
+        << ". Host: " << hostUsername
+        << " (" << hostAddress.toString() << ":" << hostPort << ")"
+        << std::endl;
+>>>>>>> Stashed changes
 }
 
 void Server::SendPlayerInfo(sf::TcpSocket& client, const std::string& username)

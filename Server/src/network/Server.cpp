@@ -65,7 +65,9 @@ void Server::HandleNewConnection()
 
     if (listener.accept(*newClient) == sf::Socket::Status::Done)
     {
-        newClient->setBlocking(false);
+        // Dejamos el socket en modo bloqueante.
+        // El selector ya nos dice cuando hay datos para leer y asi
+        // evitamos problemas al enviar varios paquetes seguidos.
         selector.add(*newClient);
         clients.push_back(newClient);
 
@@ -310,12 +312,18 @@ void Server::HandleGetRanking(sf::TcpSocket& client, sf::Packet& packet)
 
 void Server::HandlePeerReady(sf::TcpSocket& client, sf::Packet& packet)
 {
-    int peerPort = 0;
+    std::uint16_t peerPort = 0;
     packet >> peerPort;
 
     if (!IsClientAuthenticated(&client))
     {
         std::cout << "PEER_READY rechazado: cliente no autenticado" << std::endl;
+        return;
+    }
+
+    if (peerPort == 0)
+    {
+        std::cout << "PEER_READY rechazado: puerto P2P invalido" << std::endl;
         return;
     }
 
@@ -420,15 +428,17 @@ bool Server::SendPacket(sf::TcpSocket* socket, sf::Packet& packet, const std::st
         return false;
     }
 
-    if (socket->send(packet) != sf::Socket::Status::Done)
+    const sf::Socket::Status status = socket->send(packet);
+
+    if (status != sf::Socket::Status::Done)
     {
-        std::cerr << "Error al enviar " << context << std::endl;
+        std::cerr << "Error al enviar " << context
+            << " status=" << static_cast<int>(status) << std::endl;
         return false;
     }
 
     return true;
 }
-
 void Server::RemoveClient(std::size_t index)
 {
     selector.remove(*clients[index]);
@@ -453,18 +463,6 @@ void Server::RemoveClientFromRooms(sf::TcpSocket* client)
         }
 
         ++roomIndex;
-    }
-}
-
-void Server::RemoveRoomIfEmpty(const std::string& roomId)
-{
-    for (auto roomIterator = rooms.begin(); roomIterator != rooms.end(); ++roomIterator)
-    {
-        if (roomIterator->GetId() == roomId && roomIterator->GetPlayers().empty())
-        {
-            rooms.erase(roomIterator);
-            return;
-        }
     }
 }
 
@@ -597,11 +595,41 @@ void Server::SendMatchReady(Room& room)
     // Elegimos como host al primer jugador que entro en la sala.
     sf::TcpSocket* hostSocket = players.front().GetSocket();
     const std::string hostUsername = players.front().GetUsername();
-    const sf::IpAddress hostAddress = hostSocket->getRemoteAddress();
+
+    if (hostSocket == nullptr)
+    {
+        std::cout << "No se puede preparar la partida: hostSocket nulo" << std::endl;
+        return;
+    }
+
+    const std::optional<sf::IpAddress> hostAddressOptional = hostSocket->getRemoteAddress();
+    if (!hostAddressOptional.has_value())
+    {
+        std::cout << "No se ha podido obtener la IP remota del host de la sala "
+            << room.GetId() << std::endl;
+        return;
+    }
+
+    const sf::IpAddress& hostAddress = *hostAddressOptional;
     const std::uint16_t hostPort = GetPeerPort(hostSocket);
+
+    if (hostPort == 0)
+    {
+        std::cout << "No se puede preparar la partida: el host no ha registrado puerto P2P"
+            << std::endl;
+        return;
+    }
 
     for (const Player& targetPlayer : players)
     {
+        sf::TcpSocket* targetSocket = targetPlayer.GetSocket();
+
+        if (targetSocket == nullptr)
+        {
+            std::cout << "Jugador con socket nulo en la room " << room.GetId() << std::endl;
+            continue;
+        }
+
         sf::Packet startPacket;
         startPacket << tipoPaquete::START_GAME;
         startPacket << room.GetId();
@@ -610,8 +638,8 @@ void Server::SendMatchReady(Room& room)
         startPacket << static_cast<std::int32_t>(hostPort);
         startPacket << static_cast<std::int32_t>(players.size());
 
-        // Aprovechamos este paquete para mandar tambien los datos basicos
-        // de los jugadores que se veran en la UI del gameplay.
+        // Mandamos tambien la info basica de cada jugador para
+        // que el cliente pueda pintar nombres y puntuacion en gameplay.
         for (const Player& currentPlayer : players)
         {
             const PlayerData data = databaseManager.GetPlayerbyName(currentPlayer.GetUsername());
@@ -621,7 +649,11 @@ void Server::SendMatchReady(Room& room)
             startPacket << static_cast<std::int32_t>(data.puntuacion_total);
         }
 
-        SendPacket(targetPlayer.GetSocket(), startPacket, "start_game");
+        if (!SendPacket(targetSocket, startPacket, "start_game"))
+        {
+            std::cout << "No se pudo enviar START_GAME a "
+                << targetPlayer.GetUsername() << std::endl;
+        }
     }
 
     std::cout << "Datos P2P enviados para la room " << room.GetId()
@@ -704,6 +736,8 @@ std::uint16_t Server::GetPeerPort(sf::TcpSocket* client) const
 
     return foundClient->second.peerPort;
 }
+
+
 
 void Server::Shutdown()
 {

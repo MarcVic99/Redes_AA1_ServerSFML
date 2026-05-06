@@ -82,7 +82,7 @@ private:
       Cuando la sala esta completa, enviamos a todos la informacion
       necesaria para que se conecten P2P con el host.
      */
-    void SendMatchReady(Room& room);
+    void SendMatchReady(Room& room, sf::TcpSocket* client);
 
     /* Envia al cliente su id y su username despues de auth. */
     void SendPlayerInfo(sf::TcpSocket& client, const std::string& username);

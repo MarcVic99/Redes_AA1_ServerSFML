@@ -566,7 +566,7 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId)
         {
             std::cout << "Room " << roomId << " is full. Preparing P2P match..." << std::endl;
 
-            SendMatchReady(room);
+            SendMatchReady(room, client);
 
             // Importante: una vez arranca la partida, esta sala deja de existir
             // en el bootstrap. Asi ya puede volver a crearse otra con el mismo id.
@@ -583,7 +583,7 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId)
     std::cout << "Room id " << roomId << " doesn't exist" << std::endl;
 }
 
-void Server::SendMatchReady(Room& room)
+void Server::SendMatchReady(Room& room, sf::TcpSocket* client)
 {
     const std::vector<Player>& players = room.GetPlayers();
 
@@ -592,33 +592,33 @@ void Server::SendMatchReady(Room& room)
         return;
     }
 
-    // Elegimos como host al primer jugador que entro en la sala.
-    sf::TcpSocket* hostSocket = players.front().GetSocket();
-    const std::string hostUsername = players.front().GetUsername();
+    //// Elegimos como host al primer jugador que entro en la sala.
+    //sf::TcpSocket* hostSocket = players.front().GetSocket();
+    //const std::string hostUsername = players.front().GetUsername();
 
-    if (hostSocket == nullptr)
+    /*if (hostSocket == nullptr)
     {
         std::cout << "No se puede preparar la partida: hostSocket nulo" << std::endl;
         return;
-    }
+    }*/
 
-    const std::optional<sf::IpAddress> hostAddressOptional = hostSocket->getRemoteAddress();
+    /*const std::optional<sf::IpAddress> hostAddressOptional = hostSocket->getRemoteAddress();
     if (!hostAddressOptional.has_value())
     {
         std::cout << "No se ha podido obtener la IP remota del host de la sala "
             << room.GetId() << std::endl;
         return;
-    }
+    }*/
 
-    const sf::IpAddress& hostAddress = *hostAddressOptional;
-    const std::uint16_t hostPort = GetPeerPort(hostSocket);
+    /*const sf::IpAddress& hostAddress = *hostAddressOptional;
+    const std::uint16_t hostPort = GetPeerPort(hostSocket);*/
 
-    if (hostPort == 0)
+    /*if (hostPort == 0)
     {
         std::cout << "No se puede preparar la partida: el host no ha registrado puerto P2P"
             << std::endl;
         return;
-    }
+    }*/
 
     for (const Player& targetPlayer : players)
     {
@@ -633,10 +633,13 @@ void Server::SendMatchReady(Room& room)
         sf::Packet startPacket;
         startPacket << tipoPaquete::START_GAME;
         startPacket << room.GetId();
-        startPacket << hostUsername;
+        /*startPacket << hostUsername;
         startPacket << hostAddress.toString();
-        startPacket << static_cast<std::int32_t>(hostPort);
+        startPacket << static_cast<std::int32_t>(hostPort);*/
         startPacket << static_cast<std::int32_t>(players.size());
+
+        
+
 
         // Mandamos tambien la info basica de cada jugador para
         // que el cliente pueda pintar nombres y puntuacion en gameplay.
@@ -647,6 +650,24 @@ void Server::SendMatchReady(Room& room)
             startPacket << currentPlayer.GetUsername();
             startPacket << static_cast<std::int32_t>(data.id);
             startPacket << static_cast<std::int32_t>(data.puntuacion_total);
+
+            //añadir puerto e IP de los clientes
+
+            std::uint16_t port = GetPeerPort(client);
+
+            const std::optional<sf::IpAddress> ipOpt = client->getRemoteAddress();
+
+            if (ipOpt.has_value())
+            {
+                startPacket << ipOpt->toString();
+            }
+            else
+            {
+                startPacket << std::string("0.0.0.0");
+            }
+
+            startPacket << static_cast<std::int32_t>(port);
+
         }
 
         if (!SendPacket(targetSocket, startPacket, "start_game"))
@@ -657,8 +678,8 @@ void Server::SendMatchReady(Room& room)
     }
 
     std::cout << "Datos P2P enviados para la room " << room.GetId()
-        << ". Host: " << hostUsername
-        << " (" << hostAddress.toString() << ":" << hostPort << ")"
+        /*<< ". Host: " << hostUsername
+        << " (" << hostAddress.toString() << ":" << hostPort << ")"*/
         << std::endl;
 }
 

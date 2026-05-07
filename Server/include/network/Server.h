@@ -69,22 +69,15 @@ private:
     /* Limpia al cliente de las salas en las que estuviera. */
     void RemoveClientFromRooms(sf::TcpSocket* client);
 
-    /* Borra una sala si se ha quedado vacia. */
-    void RemoveRoomIfEmpty(const std::string& roomId);
-
     /* Crea una sala nueva. */
     void CreateRoom(sf::TcpSocket* client, const std::string& roomId);
 
     /* Une a un jugador a una sala existente. */
     void JoinRoom(sf::TcpSocket* client, const std::string& roomId);
 
-    /*
-      Cuando la sala esta completa, enviamos a todos la informacion
-      necesaria para que se conecten P2P con el host.
-     */
-    void SendMatchReady(Room& room, sf::TcpSocket* client);
+    void SendMatchReady(Room& room);
 
-    /* Envia al cliente su id y su username despues de auth. */
+    /* Envia al cliente su id y su username. */
     void SendPlayerInfo(sf::TcpSocket& client, const std::string& username);
 
     /* Aplica al ranking un resultado ya validado por pares. */

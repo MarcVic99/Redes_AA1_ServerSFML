@@ -585,81 +585,101 @@ void Server::JoinRoom(sf::TcpSocket* client, const std::string& roomId)
 
 void Server::SendMatchReady(Room& room)
 {
-    const std::vector<Player>& players = room.GetPlayers();
+    const std::vector<Player>& roomPlayers = room.GetPlayers();
 
-    if (players.empty())
+    if (roomPlayers.empty())
     {
+        std::cout << "No se puede preparar START_GAME: la sala esta vacia" << std::endl;
         return;
     }
 
-    // Elegimos como host al primer jugador que entro en la sala.
-    sf::TcpSocket* hostSocket = players.front().GetSocket();
-    const std::string hostUsername = players.front().GetUsername();
-
-    if (hostSocket == nullptr)
+    struct PreparedPlayerData
     {
-        std::cout << "No se puede preparar la partida: hostSocket nulo" << std::endl;
-        return;
+        std::string username;
+        std::int32_t userId = -1;
+        std::int32_t rankingPoints = 0;
+        std::string ip;
+        std::uint16_t peerPort = 0;
+        std::int32_t playerIndex = -1;
+    };
+
+    std::vector<PreparedPlayerData> preparedPlayers;
+    preparedPlayers.reserve(roomPlayers.size());
+
+    for (std::size_t index = 0; index < roomPlayers.size(); ++index)
+    {
+        const Player& currentPlayer = roomPlayers[index];
+        sf::TcpSocket* currentSocket = currentPlayer.GetSocket();
+
+        if (currentSocket == nullptr)
+        {
+            std::cout << "No se puede preparar START_GAME: socket nulo" << std::endl;
+            return;
+        }
+
+        const std::optional<sf::IpAddress> remoteAddressOptional = currentSocket->getRemoteAddress();
+        if (!remoteAddressOptional.has_value())
+        {
+            std::cout << "No se puede preparar START_GAME: no se ha podido obtener la IP de "
+                << currentPlayer.GetUsername() << std::endl;
+            return;
+        }
+
+        const std::uint16_t peerPort = GetPeerPort(currentSocket);
+        if (peerPort == 0)
+        {
+            std::cout << "No se puede preparar START_GAME: puerto P2P invalido de "
+                << currentPlayer.GetUsername() << std::endl;
+            return;
+        }
+
+        const PlayerData databaseData = databaseManager.GetPlayerbyName(currentPlayer.GetUsername());
+        if (databaseData.user.empty())
+        {
+            std::cout << "No se puede preparar START_GAME: jugador no encontrado en DB: "
+                << currentPlayer.GetUsername() << std::endl;
+            return;
+        }
+
+        PreparedPlayerData prepared;
+        prepared.username = currentPlayer.GetUsername();
+        prepared.userId = static_cast<std::int32_t>(databaseData.id);
+        prepared.rankingPoints = static_cast<std::int32_t>(databaseData.puntuacion_total);
+        prepared.ip = remoteAddressOptional->toString();
+        prepared.peerPort = peerPort;
+        prepared.playerIndex = static_cast<std::int32_t>(index);
+
+        preparedPlayers.push_back(prepared);
     }
 
-    const std::optional<sf::IpAddress> hostAddressOptional = hostSocket->getRemoteAddress();
-    if (!hostAddressOptional.has_value())
-    {
-        std::cout << "No se ha podido obtener la IP remota del host de la sala "
-            << room.GetId() << std::endl;
-        return;
-    }
-
-    const sf::IpAddress& hostAddress = *hostAddressOptional;
-    const std::uint16_t hostPort = GetPeerPort(hostSocket);
-
-    if (hostPort == 0)
-    {
-        std::cout << "No se puede preparar la partida: el host no ha registrado puerto P2P"
-            << std::endl;
-        return;
-    }
-
-    for (const Player& targetPlayer : players)
+    for (const Player& targetPlayer : roomPlayers)
     {
         sf::TcpSocket* targetSocket = targetPlayer.GetSocket();
-
         if (targetSocket == nullptr)
         {
-            std::cout << "Jugador con socket nulo en la room " << room.GetId() << std::endl;
             continue;
         }
 
         sf::Packet startPacket;
         startPacket << tipoPaquete::START_GAME;
         startPacket << room.GetId();
-        startPacket << hostUsername;
-        startPacket << hostAddress.toString();
-        startPacket << static_cast<std::int32_t>(hostPort);
-        startPacket << static_cast<std::int32_t>(players.size());
+        startPacket << static_cast<std::int32_t>(preparedPlayers.size());
 
-        // Mandamos tambien la info basica de cada jugador para
-        // que el cliente pueda pintar nombres y puntuacion en gameplay.
-        for (const Player& currentPlayer : players)
+        for (const PreparedPlayerData& prepared : preparedPlayers)
         {
-            const PlayerData data = databaseManager.GetPlayerbyName(currentPlayer.GetUsername());
-
-            startPacket << currentPlayer.GetUsername();
-            startPacket << static_cast<std::int32_t>(data.id);
-            startPacket << static_cast<std::int32_t>(data.puntuacion_total);
+            startPacket << prepared.username;
+            startPacket << prepared.userId;
+            startPacket << prepared.rankingPoints;
+            startPacket << prepared.ip;
+            startPacket << prepared.peerPort;
+            startPacket << prepared.playerIndex;
         }
 
-        if (!SendPacket(targetSocket, startPacket, "start_game"))
-        {
-            std::cout << "No se pudo enviar START_GAME a "
-                << targetPlayer.GetUsername() << std::endl;
-        }
+        SendPacket(targetSocket, startPacket, "start_game");
     }
 
-    std::cout << "Datos P2P enviados para la room " << room.GetId()
-        << ". Host: " << hostUsername
-        << " (" << hostAddress.toString() << ":" << hostPort << ")"
-        << std::endl;
+    std::cout << "START_GAME enviado para la room " << room.GetId()
+        << " con " << preparedPlayers.size() << " jugadores" << std::endl;
 }
 
 void Server::SendPlayerInfo(sf::TcpSocket& client, const std::string& username)

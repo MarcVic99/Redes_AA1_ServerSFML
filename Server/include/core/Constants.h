@@ -8,10 +8,6 @@ inline constexpr unsigned short kListenerPort = 3360;
 
 // Game configuration.
 inline constexpr std::size_t kMaxPlayers = 4;
-inline constexpr int kBoardRows = 6;
-inline constexpr int kBoardColumns = 6;
-inline constexpr int kWinningLineLength = 3;
-inline constexpr float kTurnLimitSeconds = 20.0f;
 inline constexpr int kTopRankingLimit = 10;
 inline constexpr int kSelectorWaitTimeMilliseconds = 50;
 

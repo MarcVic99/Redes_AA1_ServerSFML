@@ -2,7 +2,54 @@
 
 #include "core/Constants.h"
 
+#include <sodium.h>
+
 #include <array>
+#include <string>
+
+namespace
+{
+    constexpr size_t kPasswordHashBytes = 32;
+    constexpr char kPasswordHashSeparator = ':';
+
+    std::string ToHex(const unsigned char* data, size_t size)
+    {
+        std::string hex(size * 2 + 1, '\0');
+        sodium_bin2hex(hex.data(), hex.size(), data, size);
+        hex.pop_back();
+        return hex;
+    }
+
+    bool FromHex(const std::string& hex, unsigned char* output, size_t outputSize)
+    {
+        size_t binaryLength = 0;
+
+        return sodium_hex2bin(
+            output,
+            outputSize,
+            hex.c_str(),
+            hex.size(),
+            nullptr,
+            &binaryLength,
+            nullptr) == 0 && binaryLength == outputSize;
+    }
+
+    bool VerifyLibsodiumFormattedHash(const std::string& password, const std::string& storedHash)
+    {
+        std::string fullHash = storedHash;
+
+        if (fullHash.rfind("$argon2", 0) != 0)
+        {
+            fullHash = std::string(crypto_pwhash_STRPREFIX) + fullHash;
+        }
+
+        return crypto_pwhash_str_verify(
+            fullHash.c_str(),
+            password.c_str(),
+            password.size()) == 0;
+    }
+}
+
 
 DatabaseManager::DatabaseManager()
     : driver(nullptr), connection(nullptr)
@@ -16,6 +63,12 @@ DatabaseManager::~DatabaseManager()
 
 bool DatabaseManager::Connect()
 {
+    if (sodium_init() < 0)
+    {
+        std::cout << "Could not initialize libsodium." << std::endl;
+        return false;
+    }
+
     try
     {
         driver = get_driver_instance();
@@ -64,12 +117,20 @@ bool DatabaseManager::RegisterUser(const std::string& username, const std::strin
             return false;
         }
 
+        const std::string passwordHash = HashPassword(password);
+
+        if (passwordHash.empty())
+        {
+            std::cout << "Error while hashing password." << std::endl;
+            return false;
+        }
+
         sql::PreparedStatement* statement = connection->prepareStatement(
             "INSERT INTO users (user, password) VALUES (?, ?)"
         );
 
         statement->setString(1, username);
-        statement->setString(2, HashPassword(password));
+        statement->setString(2, passwordHash);
 
         const int affectedRows = statement->executeUpdate();
         std::cout << "Number of rows affected: " << affectedRows << std::endl;
@@ -349,25 +410,80 @@ bool DatabaseManager::UpdatePlayerStats(const std::string& username, int pointsT
 
 std::string DatabaseManager::HashPassword(const std::string& password)
 {
-    std::array<char, crypto_pwhash_STRBYTES> hashedPassword{};
+    std::array<unsigned char, crypto_pwhash_SALTBYTES> salt{};
+    std::array<unsigned char, kPasswordHashBytes> hash{};
 
-    if (crypto_pwhash_str(
-            hashedPassword.data(),
+    randombytes_buf(salt.data(), salt.size());
+
+    if (crypto_pwhash(
+            hash.data(),
+            hash.size(),
             password.c_str(),
             password.size(),
+            salt.data(),
             crypto_pwhash_OPSLIMIT_INTERACTIVE,
-            crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0)
+            crypto_pwhash_MEMLIMIT_INTERACTIVE,
+            crypto_pwhash_ALG_ARGON2ID13) != 0)
     {
         return "";
     }
 
-    return std::string(hashedPassword.data());
+    return ToHex(salt.data(), salt.size()) + kPasswordHashSeparator + ToHex(hash.data(), hash.size());
 }
 
 bool DatabaseManager::VerifyPassword(const std::string& password, const std::string& storedHash)
 {
-    return crypto_pwhash_str_verify(
-               storedHash.c_str(),
-               password.c_str(),
-               password.size()) == 0;
+    if (password.empty() || storedHash.empty())
+    {
+        return false;
+    }
+
+    // Compatibilidad con hashes antiguos guardados en formato libsodium:
+    // "$argon2id$v=19$m=..." o "v=19$m=..." si previamente quitaste solo el prefijo.
+    if (storedHash.rfind("$argon2", 0) == 0 || storedHash.rfind("v=", 0) == 0)
+    {
+        return VerifyLibsodiumFormattedHash(password, storedHash);
+    }
+
+    const size_t separator = storedHash.find(kPasswordHashSeparator);
+
+    if (separator == std::string::npos)
+    {
+        return false;
+    }
+
+    const std::string saltHex = storedHash.substr(0, separator);
+    const std::string hashHex = storedHash.substr(separator + 1);
+
+    std::array<unsigned char, crypto_pwhash_SALTBYTES> salt{};
+    std::array<unsigned char, kPasswordHashBytes> storedHashBytes{};
+    std::array<unsigned char, kPasswordHashBytes> newHash{};
+
+    if (!FromHex(saltHex, salt.data(), salt.size()))
+    {
+        return false;
+    }
+
+    if (!FromHex(hashHex, storedHashBytes.data(), storedHashBytes.size()))
+    {
+        return false;
+    }
+
+    if (crypto_pwhash(
+            newHash.data(),
+            newHash.size(),
+            password.c_str(),
+            password.size(),
+            salt.data(),
+            crypto_pwhash_OPSLIMIT_INTERACTIVE,
+            crypto_pwhash_MEMLIMIT_INTERACTIVE,
+            crypto_pwhash_ALG_ARGON2ID13) != 0)
+    {
+        return false;
+    }
+
+    return sodium_memcmp(
+               newHash.data(),
+               storedHashBytes.data(),
+               kPasswordHashBytes) == 0;
 }

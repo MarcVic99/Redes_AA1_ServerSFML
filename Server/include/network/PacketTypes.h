@@ -4,6 +4,7 @@
 
 #include <SFML/Network.hpp>
 
+
 enum class tipoPaquete
 {
     // =========================
@@ -62,11 +63,11 @@ enum class tipoPaquete
         Estos paquetes ya no pertenecen al bootstrap server.
         Se usan durante la partida entre el host y el resto de peers.
     */
+
     PLAYERS_GAME_REQUEST,
     PLAYERS_GAME_RESPONSE,
 
     PLAYER_MOVE,
-    BROADCAST_PLAYER_MOVE,
     SKIP_TURN,
     GAME_FINISHED,
 

@@ -96,6 +96,10 @@ void Server::HandleClientMessages()
             tipoPaquete tipo;
             packet >> tipo;
 
+            std::cout << "Tipo paquete recibido: " << static_cast<uint32_t>(tipo) << std::endl;
+            std::cout << "Tipo REPORT_MATCH_RESULT: " << static_cast<uint32_t>(tipoPaquete::REPORT_MATCH_RESULT) << std::endl;
+
+
             switch (tipo)
             {
             case tipoPaquete::HANDSHAKE:
